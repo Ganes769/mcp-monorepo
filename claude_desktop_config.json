@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "demo-server": {
+      "command": "/usr/local/bin/node",
+      "args": ["/Volumes/GaNesh/my-mcp/weather.js"],
+      "env": {
+        "NODE_OPTIONS": "--no-deprecation"
+      }
+    }
+  }
+}
