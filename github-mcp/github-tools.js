@@ -65,4 +65,28 @@ export default function registerGithubTools(server) {
       }
     },
   );
+  server.registerTool(
+    "list_pull_requests",
+    {
+      title: "List Pull Requests",
+      description: "List pull requests",
+      inputSchema: {
+        state: z.enum(["open", "closed", "all"]).optional(),
+        per_page: z.number().optional(),
+        ...repoParams,
+      },
+    },
+    async (params) => {
+      try {
+        const { owner, repo, state, per_page } = params;
+        const { owner: o, repo: r } = resolveRepo({ owner, repo });
+        const result = await githubRequest("GET", getRepoPath(o, r, "/pulls"), {
+          query: { state: state ?? "open", per_page: per_page ?? 30 },
+        });
+        return ok(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
 }
