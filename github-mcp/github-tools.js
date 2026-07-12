@@ -33,6 +33,10 @@ function toolError(error) {
   };
 }
 
+// Backwards-compatible aliases (safe if old handler names are referenced)
+const ok = toolResponse;
+const fail = toolError;
+
 export default function registerGithubTools(server) {
   server.registerTool(
     "create_pull_request",
