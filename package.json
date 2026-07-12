@@ -2,17 +2,26 @@
   "name": "my-mcp",
   "version": "1.0.0",
   "description": "",
+  "keywords": [],
+  "homepage": "https://github.com/Ganes769/mcp-monorepo#readme",
+  "bugs": {
+    "url": "https://github.com/Ganes769/mcp-monorepo/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ganes769/mcp-monorepo.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
   "main": "mcp.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.16",
     "openmeteo": "^1.2.0",
     "zod": "^3.25.76"
-  }
+  },
+  "devDependencies": {}
 }
