@@ -83,9 +83,9 @@ export default function registerGithubTools(server) {
         const result = await githubRequest("GET", getRepoPath(o, r, "/pulls"), {
           query: { state: state ?? "open", per_page: per_page ?? 30 },
         });
-        return ok(result);
+        return toolResponse(result);
       } catch (e) {
-        return fail(e);
+        return toolError(e);
       }
     },
   );
