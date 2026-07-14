@@ -3,7 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import path from "path";
 import sqlite3 from "sqlite3";
 import { fileURLToPath } from "url";
-
+import apiBasedTools from "./api-based-tools.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -11,6 +11,7 @@ const server = new McpServer({
   name: "issue-server",
   version: "1.0.0",
 });
+apiBasedTools(server);
 server.registerResource(
   "Database schema",
   "schema://database",
@@ -35,6 +36,30 @@ server.registerResource(
         },
       );
     });
+    server.registerTool(
+      "tags-list",
+      {
+        title: "List Tags",
+        description: "Get all available tags",
+        inputSchema: {
+          apiKey: z.string().describe("API key for authentication"),
+        },
+      },
+      async ({ apiKey }) => {
+        const result = await makeRequest("GET", `${API_BASE_URL}/tags`, null, {
+          headers: { "x-api-key": apiKey },
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      },
+    );
 
     return {
       contents: [{ uri: uri.href, mimeType: "text/plain", text: schema }],
