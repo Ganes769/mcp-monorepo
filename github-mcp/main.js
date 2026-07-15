@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import registerGithubTools from "./github-tools.js";
-
+import jobsBasedTools from "."
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env"), quiet: true });
 
