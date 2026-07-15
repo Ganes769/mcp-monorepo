@@ -3,7 +3,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import path from "path";
 import sqlite3 from "sqlite3";
 import { fileURLToPath } from "url";
-import apiBasedTools from "./api-based-tools.js";
+// import apiBasedTools from "./api-based-tools.js";
+import jobsBasedTools from "./jobs-based-tools.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -11,7 +13,7 @@ const server = new McpServer({
   name: "issue-server",
   version: "1.0.0",
 });
-apiBasedTools(server);
+jobsBasedTools(server);
 server.registerResource(
   "Database schema",
   "schema://database",
