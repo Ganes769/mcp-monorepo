@@ -1,26 +1,33 @@
 import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
+import { createClient } from "@libsql/client/web";
 import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { isTursoEnabled } from "./db/turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Create the database connection with correct path
-const dbPath = path.resolve(__dirname, "..", "database.sqlite");
-const db = new Database(dbPath);
+const baseUrl =
+  process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
+
+const frontendUrl =
+  process.env.FRONTEND_URL ?? "http://localhost:5173";
+
+const database = isTursoEnabled()
+  ? createClient({
+      url: process.env.TURSO_DATABASE_URL!.trim(),
+      authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
+    })
+  : new Database(path.resolve(__dirname, "..", "database.sqlite"));
 
 const authConfig = {
-  database: db,
-  baseURL: "http://localhost:3000/api/auth",
+  database,
+  baseURL: `${baseUrl}/api/auth`,
   emailAndPassword: {
     enabled: true,
   },
-  trustedOrigins: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:3000",
-  ],
+  trustedOrigins: [frontendUrl, baseUrl, "http://localhost:5173", "http://localhost:5174"],
   plugins: [
     apiKey({
       defaultPrefix: "issues_",
@@ -29,12 +36,7 @@ const authConfig = {
   ],
 };
 
-// Create auth instance
 const authInstance = betterAuth(authConfig);
-
-// Add event handlers after creating the instance
-// Note: In Better Auth 1.3.x, events might need to be handled differently
-// For now, we'll use a hook-based approach in the sign-up endpoint
 
 export const auth = {
   handler: authInstance.handler,

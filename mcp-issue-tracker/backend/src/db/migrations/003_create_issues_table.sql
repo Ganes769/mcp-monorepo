@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS issues (
     created_by_user_id TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assigned_user_id) REFERENCES user(id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by_user_id) REFERENCES user(id) ON DELETE CASCADE
+    FOREIGN KEY (assigned_user_id) REFERENCES "user"(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by_user_id) REFERENCES "user"(id) ON DELETE CASCADE
 );
 
 -- Create indexes for better query performance

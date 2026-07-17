@@ -26,7 +26,11 @@ export async function buildApp(
 
   // Register CORS
   await fastify.register(cors, {
-    origin: ["http://localhost:5173", "http://localhost:5174"], // Vite dev server
+    origin: [
+      process.env.FRONTEND_URL ?? "http://localhost:5173",
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
