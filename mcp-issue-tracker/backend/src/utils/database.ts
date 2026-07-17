@@ -1,16 +1,20 @@
-import sqlite3 from "sqlite3";
 import { promisify } from "util";
 import path from "path";
 import { fileURLToPath } from "url";
 import { DatabaseError } from "../middleware/errorHandler.js";
+import { getDatabase as getAppDatabase } from "../db/database.js";
+import { isTursoEnabled } from "../db/turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+type SqliteDatabase = import("sqlite3").Database;
+type SqliteRunResult = import("sqlite3").RunResult;
 
 // Database file path - consistent with auth.ts and db/database.ts
 const DB_PATH = path.resolve(__dirname, "..", "..", "database.sqlite");
 
 export interface Database {
-  run: (sql: string, params?: any[]) => Promise<sqlite3.RunResult>;
+  run: (sql: string, params?: any[]) => Promise<SqliteRunResult>;
   get: (sql: string, params?: any[]) => Promise<any>;
   all: (sql: string, params?: any[]) => Promise<any[]>;
   close: () => Promise<void>;
@@ -20,13 +24,13 @@ export interface Database {
 }
 
 class DatabaseConnection implements Database {
-  private db: sqlite3.Database;
-  public run: (sql: string, params?: any[]) => Promise<sqlite3.RunResult>;
+  private db: SqliteDatabase;
+  public run: (sql: string, params?: any[]) => Promise<SqliteRunResult>;
   public get: (sql: string, params?: any[]) => Promise<any>;
   public all: (sql: string, params?: any[]) => Promise<any[]>;
   public close: () => Promise<void>;
 
-  constructor(db: sqlite3.Database) {
+  constructor(db: SqliteDatabase) {
     this.db = db;
     this.run = promisify(db.run.bind(db));
     this.get = promisify(db.get.bind(db));
@@ -51,6 +55,12 @@ class DatabaseConnection implements Database {
  * Get a database connection with error handling
  */
 export async function getDatabase(): Promise<Database> {
+  if (isTursoEnabled()) {
+    return getAppDatabase() as Promise<Database>;
+  }
+
+  const sqlite3 = (await import("sqlite3")).default;
+
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {

@@ -1,7 +1,6 @@
 import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
 import { createClient } from "@libsql/client/web";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import { isTursoEnabled } from "./db/turso-client.js";
@@ -14,12 +13,19 @@ const baseUrl =
 const frontendUrl =
   process.env.FRONTEND_URL ?? "http://localhost:5173";
 
-const database = isTursoEnabled()
-  ? createClient({
+async function createAuthDatabase() {
+  if (isTursoEnabled()) {
+    return createClient({
       url: process.env.TURSO_DATABASE_URL!.trim(),
       authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
-    })
-  : new Database(path.resolve(__dirname, "..", "database.sqlite"));
+    });
+  }
+
+  const { default: Database } = await import("better-sqlite3");
+  return new Database(path.resolve(__dirname, "..", "database.sqlite"));
+}
+
+const database = await createAuthDatabase();
 
 const authConfig = {
   database,
@@ -42,3 +48,5 @@ export const auth = {
   handler: authInstance.handler,
   api: authInstance.api,
 };
+
+export const authBaseUrl = baseUrl;

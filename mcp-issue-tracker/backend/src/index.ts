@@ -1,6 +1,6 @@
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
-import { auth } from "./auth.js";
+import { auth, authBaseUrl } from "./auth.js";
 import usersRoute from "./routes/users.js";
 import tagsRoute from "./routes/tags.js";
 import issuesRoute from "./routes/issues.js";
@@ -44,7 +44,7 @@ export async function buildApp(
         try {
           // First, create the user through Better Auth
           const authRequest = new Request(
-            `http://localhost:3000/api/auth/sign-up/email`,
+            `${authBaseUrl}/api/auth/sign-up/email`,
             {
               method: "POST",
               headers: {
@@ -131,7 +131,7 @@ export async function buildApp(
         try {
           // Get the session to verify user is authenticated
           const authRequest = new Request(
-            `http://localhost:3000/api/auth/get-session`,
+            `${authBaseUrl}/api/auth/get-session`,
             {
               method: "GET",
               headers: {
@@ -219,7 +219,8 @@ export async function buildApp(
       fastify.all("/*", async (request, reply) => {
         try {
           // Construct the full URL
-          const testUrl = `http://localhost:3000${request.url}`;
+          const pathname = request.raw.url ?? request.url;
+          const testUrl = new URL(pathname, authBaseUrl).toString();
 
           // Convert Fastify headers to Headers object
           const headers = new Headers();

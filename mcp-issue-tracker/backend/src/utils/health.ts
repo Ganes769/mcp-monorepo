@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { checkDatabaseHealth } from "../utils/database.js";
+import { getDatabase } from "../db/database.js";
 import os from "os";
 
 export interface HealthCheckResult {
@@ -50,6 +50,33 @@ function checkMemoryHealth(): HealthCheckResult["services"]["memory"] {
 /**
  * Perform comprehensive health check
  */
+async function checkDatabaseHealth(): Promise<{
+  status: "healthy" | "unhealthy";
+  tables: string[];
+  error?: string;
+}> {
+  try {
+    const db = await getDatabase();
+    const tables = await db.all(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+    `);
+    await db.close();
+
+    return {
+      status: "healthy",
+      tables: tables.map((table) => table.name),
+    };
+  } catch (error) {
+    return {
+      status: "unhealthy",
+      tables: [],
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 export async function performHealthCheck(): Promise<HealthCheckResult> {
   const startTime = Date.now();
 
