@@ -21,6 +21,12 @@ async function createAuthDatabase() {
     });
   }
 
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    throw new Error(
+      "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set on Vercel"
+    );
+  }
+
   const { default: Database } = await import("better-sqlite3");
   return new Database(path.resolve(__dirname, "..", "database.sqlite"));
 }
@@ -29,11 +35,17 @@ const database = await createAuthDatabase();
 
 const authConfig = {
   database,
+  secret: process.env.BETTER_AUTH_SECRET,
   baseURL: `${baseUrl}/api/auth`,
   emailAndPassword: {
     enabled: true,
   },
-  trustedOrigins: [frontendUrl, baseUrl, "http://localhost:5173", "http://localhost:5174"],
+  trustedOrigins: [
+    frontendUrl,
+    baseUrl,
+    "http://localhost:5173",
+    "http://localhost:5174",
+  ],
   plugins: [
     apiKey({
       defaultPrefix: "issues_",
