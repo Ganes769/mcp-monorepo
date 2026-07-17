@@ -24,8 +24,8 @@ CREATE TABLE issues (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-    FOREIGN KEY (assigned_user_id) REFERENCES user(id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by_user_id) REFERENCES user(id) ON DELETE CASCADE
+    FOREIGN KEY (assigned_user_id) REFERENCES "user"(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by_user_id) REFERENCES "user"(id) ON DELETE CASCADE
 );
 
 -- Copy data back

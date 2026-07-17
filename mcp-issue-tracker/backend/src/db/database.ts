@@ -3,40 +3,94 @@ import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import type { Client, ResultSet } from "@libsql/client";
+import { getTursoClient, isTursoEnabled } from "./turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Enable verbose mode for debugging
 sqlite3.verbose();
 
-// Database file path - consistent with auth.ts
 const DB_PATH = path.resolve(__dirname, "..", "..", "database.sqlite");
 
 export interface Database {
-  run: (sql: string, params?: any[]) => Promise<sqlite3.RunResult>;
+  run: (
+    sql: string,
+    params?: any[],
+  ) => Promise<{ lastID?: number; changes?: number }>;
   get: (sql: string, params?: any[]) => Promise<any>;
   all: (sql: string, params?: any[]) => Promise<any[]>;
   close: () => Promise<void>;
 }
 
+class TursoDatabaseConnection implements Database {
+  constructor(private client: Client) {}
+
+  async run(sql: string, params: any[] = []) {
+    const result = await this.client.execute({ sql, args: params });
+    return {
+      lastID: Number(result.lastInsertRowid ?? 0),
+      changes: result.rowsAffected,
+    };
+  }
+
+  async get(sql: string, params: any[] = []) {
+    const result = await this.client.execute({ sql, args: params });
+    return rowToObject(result);
+  }
+
+  async all(sql: string, params: any[] = []) {
+    const result = await this.client.execute({ sql, args: params });
+    return rowsToObjects(result);
+  }
+
+  async close() {
+    this.client.close();
+  }
+}
+
+function rowToObject(result: ResultSet) {
+  if (!result.rows.length || !result.columns.length) {
+    return undefined;
+  }
+
+  const row = result.rows[0];
+  const obj: Record<string, unknown> = {};
+  result.columns.forEach((column, index) => {
+    obj[column] = row[index];
+  });
+  return obj;
+}
+
+function rowsToObjects(result: ResultSet) {
+  return result.rows.map((row) => {
+    const obj: Record<string, unknown> = {};
+    result.columns.forEach((column, index) => {
+      obj[column] = row[index];
+    });
+    return obj;
+  });
+}
+
 export class DatabaseConnection {
   private db: sqlite3.Database;
-  public run: (sql: string, params?: any[]) => Promise<sqlite3.RunResult>;
-  public get: (sql: string, params?: any[]) => Promise<any>;
-  public all: (sql: string, params?: any[]) => Promise<any[]>;
-  public close: () => Promise<void>;
+  public run: Database["run"];
+  public get: Database["get"];
+  public all: Database["all"];
+  public close: Database["close"];
 
   constructor(db: sqlite3.Database) {
     this.db = db;
 
-    // Properly promisify the run method to return the context (this)
     this.run = (sql: string, params?: any[]) => {
       return new Promise((resolve, reject) => {
         this.db.run(sql, params || [], function (err) {
           if (err) {
             reject(err);
           } else {
-            resolve(this); // 'this' contains lastID, changes, etc.
+            resolve({
+              lastID: this.lastID,
+              changes: this.changes,
+            });
           }
         });
       });
@@ -49,6 +103,10 @@ export class DatabaseConnection {
 }
 
 export async function createDatabase(): Promise<Database> {
+  if (isTursoEnabled()) {
+    return new TursoDatabaseConnection(getTursoClient());
+  }
+
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
@@ -65,10 +123,13 @@ export async function createDatabase(): Promise<Database> {
 }
 
 export async function runMigrations(): Promise<void> {
+  if (isTursoEnabled()) {
+    throw new Error("Use npm run db:migrate:turso for Turso migrations");
+  }
+
   const db = await createDatabase();
 
   try {
-    // Enable foreign keys
     await db.run("PRAGMA foreign_keys = ON");
 
     const migrationsDir = path.join(__dirname, "migrations");
@@ -103,16 +164,17 @@ export async function runMigrations(): Promise<void> {
 }
 
 export async function getDatabase(): Promise<Database> {
-  // Use test database if we're in test environment
   if (process.env.NODE_ENV === "test") {
     const { testDb } = await import("../tests/setup.js");
-    // Enable foreign keys for test database
     await testDb.run("PRAGMA foreign_keys = ON");
     return testDb;
   }
 
   const db = await createDatabase();
-  // Enable foreign keys for this connection
-  await db.run("PRAGMA foreign_keys = ON");
+
+  if (!isTursoEnabled()) {
+    await db.run("PRAGMA foreign_keys = ON");
+  }
+
   return db;
 }
