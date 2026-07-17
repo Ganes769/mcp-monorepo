@@ -1,4 +1,3 @@
-import sqlite3 from "sqlite3";
 import { promisify } from "util";
 import fs from "fs";
 import path from "path";
@@ -8,7 +7,7 @@ import { getTursoClient, isTursoEnabled } from "./turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-sqlite3.verbose();
+type SqliteDatabase = import("sqlite3").Database;
 
 const DB_PATH = path.resolve(__dirname, "..", "..", "database.sqlite");
 
@@ -53,7 +52,7 @@ function rowToObject(result: ResultSet) {
     return undefined;
   }
 
-  const row = result.rows[0];
+  const row = result.rows[0]!;
   const obj: Record<string, unknown> = {};
   result.columns.forEach((column, index) => {
     obj[column] = row[index];
@@ -72,13 +71,13 @@ function rowsToObjects(result: ResultSet) {
 }
 
 export class DatabaseConnection {
-  private db: sqlite3.Database;
+  private db: SqliteDatabase;
   public run: Database["run"];
   public get: Database["get"];
   public all: Database["all"];
   public close: Database["close"];
 
-  constructor(db: sqlite3.Database) {
+  constructor(db: SqliteDatabase) {
     this.db = db;
 
     this.run = (sql: string, params?: any[]) => {
@@ -102,10 +101,18 @@ export class DatabaseConnection {
   }
 }
 
+async function loadSqlite3() {
+  const sqlite3 = (await import("sqlite3")).default;
+  sqlite3.verbose();
+  return sqlite3;
+}
+
 export async function createDatabase(): Promise<Database> {
   if (isTursoEnabled()) {
     return new TursoDatabaseConnection(getTursoClient());
   }
+
+  const sqlite3 = await loadSqlite3();
 
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(DB_PATH, (err) => {

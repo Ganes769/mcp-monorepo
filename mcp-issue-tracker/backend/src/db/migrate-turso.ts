@@ -63,7 +63,7 @@ async function runFile(label: string, filePath: string) {
   console.log(`\n==> ${label} (${statements.length} statements)`);
 
   for (const statement of statements) {
-    const preview = statement.split("\n")[0].slice(0, 80);
+    const preview = statement.split("\n")[0]?.slice(0, 80) ?? statement.slice(0, 80);
     try {
       await executeStatement(statement);
       console.log(`  OK: ${preview}`);
