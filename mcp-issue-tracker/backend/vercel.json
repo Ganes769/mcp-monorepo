@@ -1,9 +1,4 @@
 {
   "installCommand": "npm install --ignore-scripts",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
-  ]
+  "buildCommand": "npm run build"
 }

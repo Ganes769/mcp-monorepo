@@ -1,3 +1,4 @@
+import "./env.js";
 import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
 import { createClient } from "@libsql/client/web";
@@ -31,12 +32,16 @@ async function createAuthDatabase() {
 
 const database = await createAuthDatabase();
 
+if (!process.env.BETTER_AUTH_SECRET && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
+  console.error("BETTER_AUTH_SECRET is not set — auth will fail in production");
+}
+
 const authConfig = {
   database,
   ...(process.env.BETTER_AUTH_SECRET
     ? { secret: process.env.BETTER_AUTH_SECRET }
     : {}),
-  baseURL: `${baseUrl}/api/auth`,
+  baseURL: `${baseUrl.replace(/\/$/, "")}/api/auth`,
   emailAndPassword: {
     enabled: true,
   },
@@ -61,4 +66,4 @@ export const auth = {
   api: authInstance.api,
 };
 
-export const authBaseUrl = baseUrl;
+export const authBaseUrl = baseUrl.replace(/\/$/, "");
