@@ -8,16 +8,23 @@ import { isTursoEnabled } from "./db/turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const baseUrl = process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
+const baseUrl = (process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000").replace(
+  /\/$/,
+  "",
+);
 
 const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
 async function createAuthDatabase() {
   if (isTursoEnabled()) {
-    return createClient({
-      url: process.env.TURSO_DATABASE_URL!.trim(),
-      authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
-    });
+    // Better Auth needs an explicit type; raw libsql client alone fails adapter init.
+    return {
+      db: createClient({
+        url: process.env.TURSO_DATABASE_URL!.trim(),
+        authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
+      }),
+      type: "sqlite" as const,
+    };
   }
 
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
@@ -32,16 +39,12 @@ async function createAuthDatabase() {
 
 const database = await createAuthDatabase();
 
-if (!process.env.BETTER_AUTH_SECRET && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
-  console.error("BETTER_AUTH_SECRET is not set — auth will fail in production");
-}
-
 const authConfig = {
   database,
   ...(process.env.BETTER_AUTH_SECRET
     ? { secret: process.env.BETTER_AUTH_SECRET }
     : {}),
-  baseURL: `${baseUrl.replace(/\/$/, "")}/api/auth`,
+  baseURL: `${baseUrl}/api/auth`,
   emailAndPassword: {
     enabled: true,
   },
@@ -66,4 +69,4 @@ export const auth = {
   api: authInstance.api,
 };
 
-export const authBaseUrl = baseUrl.replace(/\/$/, "");
+export const authBaseUrl = baseUrl;
