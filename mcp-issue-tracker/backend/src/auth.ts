@@ -7,11 +7,9 @@ import { isTursoEnabled } from "./db/turso-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const baseUrl =
-  process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
+const baseUrl = process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
 
-const frontendUrl =
-  process.env.FRONTEND_URL ?? "http://localhost:5173";
+const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
 async function createAuthDatabase() {
   if (isTursoEnabled()) {
@@ -23,7 +21,7 @@ async function createAuthDatabase() {
 
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
     throw new Error(
-      "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set on Vercel"
+      "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set on Vercel",
     );
   }
 
@@ -35,7 +33,9 @@ const database = await createAuthDatabase();
 
 const authConfig = {
   database,
-  secret: process.env.BETTER_AUTH_SECRET,
+  ...(process.env.BETTER_AUTH_SECRET
+    ? { secret: process.env.BETTER_AUTH_SECRET }
+    : {}),
   baseURL: `${baseUrl}/api/auth`,
   emailAndPassword: {
     enabled: true,

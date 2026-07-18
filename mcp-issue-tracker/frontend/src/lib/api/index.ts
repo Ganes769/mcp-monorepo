@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/config";
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -7,8 +8,6 @@ import type {
   Tag,
   IssueFilters,
 } from "@/types";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 // Create axios instance with default config
 export const api = axios.create({

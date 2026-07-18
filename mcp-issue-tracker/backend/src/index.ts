@@ -1,3 +1,4 @@
+import type { IncomingMessage, ServerResponse } from "http";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { auth, authBaseUrl } from "./auth.js";
@@ -302,11 +303,40 @@ export async function buildApp(
   return fastify;
 }
 
-// Start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+let cachedApp: FastifyInstance | undefined;
+
+async function getApp(): Promise<FastifyInstance> {
+  if (!cachedApp) {
+    cachedApp = await buildApp();
+    await cachedApp.ready();
+  }
+  return cachedApp;
+}
+
+// Vercel requires a default export that is a function (or Node server).
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const instance = await getApp();
+  instance.server.emit("request", req, res);
+}
+
+// Local/dev: start listening when this file is the process entrypoint.
+const entry = process.argv[1] ?? "";
+const isDirectRun =
+  process.env.NODE_ENV !== "test" &&
+  !process.env.VERCEL &&
+  (entry.endsWith("index.js") ||
+    entry.endsWith("index.ts") ||
+    entry.endsWith("src/index.ts") ||
+    entry.endsWith("dist/index.js"));
+
+if (isDirectRun) {
   try {
-    const app = await buildApp();
-    await app.listen({ port: 3000, host: "0.0.0.0" });
+    const instance = await getApp();
+    const port = Number(process.env.PORT) || 3000;
+    await instance.listen({ port, host: "0.0.0.0" });
   } catch (err) {
     console.error(err);
     process.exit(1);

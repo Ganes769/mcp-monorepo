@@ -1,0 +1,7 @@
+src/
+database.sqlite
+.env
+.env.*
+!.env.template
+*.sqlite
+node_modules/.cache

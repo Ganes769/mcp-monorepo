@@ -1,11 +1,24 @@
 #!/usr/bin/env node
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { getDatabase } from "./database.js";
+import { isTursoEnabled } from "./turso-client.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const backendRoot = path.resolve(__dirname, "../..");
+
+dotenv.config({ path: path.join(backendRoot, ".env"), quiet: true });
 
 async function seedDatabase() {
   const db = await getDatabase();
 
   try {
-    console.log("Seeding database with sample data...");
+    console.log(
+      isTursoEnabled()
+        ? "Seeding Turso database with sample data..."
+        : "Seeding database with sample data..."
+    );
 
     // Clear existing data (in reverse order due to foreign keys)
     await db.run("DELETE FROM issue_tags");
@@ -16,10 +29,12 @@ async function seedDatabase() {
     await db.run("DELETE FROM verification");
     await db.run("DELETE FROM user");
 
-    // Reset auto-increment counters
-    await db.run(
-      'DELETE FROM sqlite_sequence WHERE name IN ("issues", "tags")'
-    );
+    // Reset auto-increment counters (local SQLite only)
+    if (!isTursoEnabled()) {
+      await db.run(
+        "DELETE FROM sqlite_sequence WHERE name IN ('issues', 'tags')"
+      );
+    }
 
     // Create sample users in BetterAuth user table
     const users = [
@@ -60,13 +75,25 @@ async function seedDatabase() {
       console.log(`Created tag: ${tag.name}`);
     }
 
-    // Create sample issues
+    // Create sample issues (status values differ after migration 006 on Turso)
+    const status = (value: "not_started" | "in_progress" | "done") => {
+      if (!isTursoEnabled()) {
+        return value;
+      }
+      const tursoStatus: Record<typeof value, string> = {
+        not_started: "open",
+        in_progress: "in_progress",
+        done: "resolved",
+      };
+      return tursoStatus[value];
+    };
+
     const issues = [
       {
         title: "Set up project structure",
         description:
           "Initialize the project with proper directory structure and configuration files.",
-        status: "done",
+        status: status("done"),
         assigned_user_id: userIds[0],
         created_by_user_id: userIds[2],
         tags: [tagIds[1]], // backend
@@ -75,7 +102,7 @@ async function seedDatabase() {
         title: "Design user authentication flow",
         description:
           "Create wireframes and user flows for the authentication system including sign up, sign in, and password reset.",
-        status: "in_progress",
+        status: status("in_progress"),
         assigned_user_id: userIds[1],
         created_by_user_id: userIds[2],
         tags: [tagIds[0], tagIds[3]], // frontend, feature
@@ -84,7 +111,7 @@ async function seedDatabase() {
         title: "Fix issue list filtering",
         description:
           'The issue list filter by status is not working correctly. When selecting "in progress", it shows all issues.',
-        status: "not_started",
+        status: status("not_started"),
         assigned_user_id: userIds[0],
         created_by_user_id: userIds[1],
         tags: [tagIds[0], tagIds[2]], // frontend, bug
@@ -93,7 +120,7 @@ async function seedDatabase() {
         title: "Add dark mode support",
         description:
           "Implement dark mode toggle functionality with proper theme switching and persistence.",
-        status: "not_started",
+        status: status("not_started"),
         assigned_user_id: null,
         created_by_user_id: userIds[3],
         tags: [tagIds[0], tagIds[4]], // frontend, enhancement
@@ -102,7 +129,7 @@ async function seedDatabase() {
         title: "API documentation",
         description:
           "Create comprehensive API documentation with examples for all endpoints.",
-        status: "not_started",
+        status: status("not_started"),
         assigned_user_id: userIds[3],
         created_by_user_id: userIds[2],
         tags: [tagIds[5]], // documentation
@@ -111,7 +138,7 @@ async function seedDatabase() {
         title: "Database performance optimization",
         description:
           "Review and optimize database queries for better performance, especially for the issues list with filtering.",
-        status: "not_started",
+        status: status("not_started"),
         assigned_user_id: null,
         created_by_user_id: userIds[2],
         tags: [tagIds[1], tagIds[4]], // backend, enhancement
