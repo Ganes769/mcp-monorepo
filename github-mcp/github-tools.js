@@ -33,6 +33,10 @@ function toolError(error) {
   };
 }
 
+// Backwards-compatible aliases (safe if old handler names are referenced)
+const ok = toolResponse;
+const fail = toolError;
+
 export default function registerGithubTools(server) {
   server.registerTool(
     "create_pull_request",
@@ -62,6 +66,30 @@ export default function registerGithubTools(server) {
         return toolResponse(result);
       } catch (error) {
         return toolError(error);
+      }
+    },
+  );
+  server.registerTool(
+    "list_pull_requests",
+    {
+      title: "List Pull Requests",
+      description: "List pull requests",
+      inputSchema: {
+        state: z.enum(["open", "closed", "all"]).optional(),
+        per_page: z.number().optional(),
+        ...repoParams,
+      },
+    },
+    async (params) => {
+      try {
+        const { owner, repo, state, per_page } = params;
+        const { owner: o, repo: r } = resolveRepo({ owner, repo });
+        const result = await githubRequest("GET", getRepoPath(o, r, "/pulls"), {
+          query: { state: state ?? "open", per_page: per_page ?? 30 },
+        });
+        return toolResponse(result);
+      } catch (e) {
+        return toolError(e);
       }
     },
   );
