@@ -5,7 +5,7 @@ import { createClient } from "@libsql/client/web";
 import path from "path";
 import { fileURLToPath } from "url";
 import { isTursoEnabled } from "./db/turso-client.js";
-import { getAllowedOrigins } from "./env.js";
+import { getTrustedOriginPatterns } from "./env.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,7 +47,7 @@ const authConfig = {
   emailAndPassword: {
     enabled: true,
   },
-  trustedOrigins: [...getAllowedOrigins(), baseUrl],
+  trustedOrigins: [...getTrustedOriginPatterns(), baseUrl],
   plugins: [
     apiKey({
       defaultPrefix: "issues_",
