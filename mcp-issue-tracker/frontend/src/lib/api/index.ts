@@ -9,6 +9,16 @@ import type {
   IssueFilters,
 } from "@/types";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 // Create axios instance with default config
 export const api = axios.create({
   baseURL: API_BASE_URL,
