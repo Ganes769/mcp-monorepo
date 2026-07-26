@@ -5,12 +5,11 @@ import { createClient } from "@libsql/client/web";
 import path from "path";
 import { fileURLToPath } from "url";
 import { isTursoEnabled } from "./db/turso-client.js";
+import { getAllowedOrigins } from "./env.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const baseUrl = process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
-
-const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
 async function createAuthDatabase() {
   if (isTursoEnabled()) {
@@ -45,12 +44,7 @@ const authConfig = {
   emailAndPassword: {
     enabled: true,
   },
-  trustedOrigins: [
-    frontendUrl,
-    baseUrl,
-    "http://localhost:5173",
-    "http://localhost:5174",
-  ],
+  trustedOrigins: [...getAllowedOrigins(), baseUrl],
   plugins: [
     apiKey({
       defaultPrefix: "issues_",

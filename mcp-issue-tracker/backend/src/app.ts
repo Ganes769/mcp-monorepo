@@ -2,6 +2,7 @@ import "./env.js";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { auth, authBaseUrl } from "./auth.js";
+import { getAllowedOrigins } from "./env.js";
 import usersRoute from "./routes/users.js";
 import tagsRoute from "./routes/tags.js";
 import issuesRoute from "./routes/issues.js";
@@ -27,11 +28,7 @@ export async function buildApp(
 
   // Register CORS
   await fastify.register(cors, {
-    origin: [
-      process.env.FRONTEND_URL ?? "http://localhost:5173",
-      "http://localhost:5173",
-      "http://localhost:5174",
-    ],
+    origin: getAllowedOrigins(),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
