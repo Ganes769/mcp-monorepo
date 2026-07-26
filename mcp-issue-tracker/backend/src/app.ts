@@ -14,7 +14,7 @@ import {
 } from "./utils/health.js";
 
 export async function buildApp(
-  options = { skipAuth: false }
+  options = { skipAuth: false },
 ): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: process.env.NODE_ENV !== "test",
@@ -49,7 +49,7 @@ export async function buildApp(
                 "content-type": "application/json",
               },
               body: JSON.stringify(request.body),
-            }
+            },
           );
 
           const authResponse = await auth.handler(authRequest);
@@ -73,7 +73,7 @@ export async function buildApp(
               });
 
               console.log(
-                `API key created for user ${userData.user.name}: ${apiKeyResult?.start || "created"}`
+                `API key created for user ${userData.user.name}: ${apiKeyResult?.start || "created"}`,
               );
 
               // Optionally include API key info in response (be careful with security)
@@ -97,7 +97,7 @@ export async function buildApp(
             } catch (error) {
               console.error(
                 `Failed to create API key for user ${userData.user.name}:`,
-                error
+                error,
               );
               // Still return successful auth response even if API key creation fails
               reply.status(authResponse.status);
@@ -135,7 +135,7 @@ export async function buildApp(
               headers: {
                 cookie: request.headers.cookie || "",
               },
-            }
+            },
           );
 
           const sessionResponse = await auth.handler(authRequest);
@@ -171,7 +171,7 @@ export async function buildApp(
               } catch (deleteError) {
                 console.error(
                   `Failed to delete API key ${key.id}:`,
-                  deleteError
+                  deleteError,
                 );
               }
             }
@@ -190,7 +190,7 @@ export async function buildApp(
           });
 
           console.log(
-            `New API key generated for user ${sessionData.user.name}: ${apiKeyResult?.start || "created"}`
+            `New API key generated for user ${sessionData.user.name}: ${apiKeyResult?.start || "created"}`,
           );
 
           reply.send({
@@ -272,7 +272,7 @@ export async function buildApp(
         }
       });
     },
-    { prefix: "/api/auth" }
+    { prefix: "/api/auth" },
   );
 
   // Test route

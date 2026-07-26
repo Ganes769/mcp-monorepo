@@ -31,7 +31,10 @@ async function createAuthDatabase() {
 
 const database = await createAuthDatabase();
 
-if (!process.env.BETTER_AUTH_SECRET && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
+if (
+  !process.env.BETTER_AUTH_SECRET &&
+  (process.env.VERCEL || process.env.NODE_ENV === "production")
+) {
   console.error("BETTER_AUTH_SECRET is not set — auth will fail in production");
 }
 
