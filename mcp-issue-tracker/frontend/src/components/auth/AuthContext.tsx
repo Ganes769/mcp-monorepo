@@ -1,7 +1,18 @@
 import { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { isAxiosError } from 'axios';
 import type { AuthState } from '@/types';
 import { authApi } from '@/lib/api';
+
+// Surface the server's actual error (e.g. Better Auth's "Password is too
+// short") instead of Axios's generic "Request failed with status code 400".
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError(error)) {
+    const data = error.response?.data as { message?: string; error?: string } | undefined;
+    return data?.message || data?.error || error.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -75,8 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error: unknown) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
-      return { success: false, error: errorMessage };
+      return { success: false, error: extractErrorMessage(error, 'Sign in failed') };
     }
   };
 
@@ -99,8 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error: unknown) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      const errorMessage = error instanceof Error ? error.message : 'Sign up failed';
-      return { success: false, error: errorMessage };
+      return { success: false, error: extractErrorMessage(error, 'Sign up failed') };
     }
   };
 

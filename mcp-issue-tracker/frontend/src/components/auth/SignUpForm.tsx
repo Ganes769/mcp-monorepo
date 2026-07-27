@@ -26,8 +26,9 @@ export default function SignUpForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Better Auth's server-side minimum password length is 8.
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
 
@@ -107,7 +108,7 @@ export default function SignUpForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                minLength={6}
+                minLength={8}
               />
             </div>
             
@@ -123,7 +124,7 @@ export default function SignUpForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                minLength={6}
+                minLength={8}
               />
             </div>
             

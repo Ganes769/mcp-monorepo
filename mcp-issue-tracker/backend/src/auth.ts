@@ -1,7 +1,7 @@
 import "./env.js";
 import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
-import { createClient } from "@libsql/client/web";
+import { LibsqlDialect } from "@libsql/kysely-libsql";
 import path from "path";
 import { fileURLToPath } from "url";
 import { isTursoEnabled } from "./db/turso-client.js";
@@ -11,12 +11,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const baseUrl = process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
 
+// Better Auth cannot consume a raw @libsql/client instance; it needs a
+// Kysely dialect (or a better-sqlite3 Database) as its `database` option.
 async function createAuthDatabase() {
   if (isTursoEnabled()) {
-    return createClient({
-      url: process.env.TURSO_DATABASE_URL!.trim(),
-      authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
-    });
+    return {
+      dialect: new LibsqlDialect({
+        url: process.env.TURSO_DATABASE_URL!.trim(),
+        authToken: process.env.TURSO_AUTH_TOKEN!.trim(),
+      }),
+      type: "sqlite" as const,
+    };
   }
 
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
