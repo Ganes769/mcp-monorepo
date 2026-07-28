@@ -12,6 +12,7 @@ dotenv.config({ path: path.join(backendRoot, ".env"), quiet: true });
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "https://mcp-monorepo.vercel.app",
   "https://mcp-monorepo-theta.vercel.app",
 ];
 
