@@ -331,11 +331,16 @@ const issuesRoute: FastifyPluginAsync = async function (fastify) {
             tag_ids
           );
           if (existingTags.length !== tag_ids.length) {
+            const validIds = new Set(existingTags.map((t: any) => t.id));
+            const invalidIds = tag_ids.filter((id) => !validIds.has(id));
+            const allTags = await db.all("SELECT id, name FROM tags ORDER BY id");
             await db.close();
             return reply.status(400).send({
               success: false,
               error: "Validation error",
-              message: "One or more tag IDs are invalid",
+              message: `Invalid tag ID(s): ${invalidIds.join(", ")}. Available tags: ${allTags
+                .map((t: any) => `${t.name} (id: ${t.id})`)
+                .join(", ")}`,
             });
           }
         }
@@ -661,11 +666,16 @@ const issuesRoute: FastifyPluginAsync = async function (fastify) {
             tag_ids
           );
           if (existingTags.length !== tag_ids.length) {
+            const validIds = new Set(existingTags.map((t: any) => t.id));
+            const invalidIds = tag_ids.filter((id) => !validIds.has(id));
+            const allTags = await db.all("SELECT id, name FROM tags ORDER BY id");
             await db.close();
             return reply.status(400).send({
               success: false,
               error: "Validation error",
-              message: "One or more tag IDs are invalid",
+              message: `Invalid tag ID(s): ${invalidIds.join(", ")}. Available tags: ${allTags
+                .map((t: any) => `${t.name} (id: ${t.id})`)
+                .join(", ")}`,
             });
           }
         }

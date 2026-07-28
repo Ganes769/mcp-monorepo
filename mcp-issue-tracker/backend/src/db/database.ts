@@ -43,7 +43,10 @@ class TursoDatabaseConnection implements Database {
   }
 
   async close() {
-    this.client.close();
+    // No-op: the underlying Turso client is a process-wide singleton
+    // (getTursoClient). Routes call db.close() after every request, which
+    // worked with per-call SQLite connections but would permanently close
+    // the shared client and 500 every subsequent request.
   }
 }
 

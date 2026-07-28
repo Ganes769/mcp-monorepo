@@ -45,6 +45,41 @@ export default function apiBasedTools(server) {
     }
   }
 
+  // Resolve tag names to numeric IDs via the API so callers don't have to
+  // guess IDs. Returns { tagIds } or { error } with the list of valid tags.
+  async function resolveTagNames(tagNames, apiKey) {
+    const result = await makeRequest("GET", `${API_BASE_URL}/tags`, null, {
+      headers: { "x-api-key": apiKey },
+    });
+
+    const tags = result?.data?.data;
+    if (!Array.isArray(tags)) {
+      return { error: `Could not fetch tags to resolve names: ${JSON.stringify(result?.data ?? result?.error)}` };
+    }
+
+    const tagIds = [];
+    const unknown = [];
+    for (const name of tagNames) {
+      const match = tags.find(
+        (t) => t.name.toLowerCase() === String(name).trim().toLowerCase()
+      );
+      if (match) {
+        tagIds.push(match.id);
+      } else {
+        unknown.push(name);
+      }
+    }
+
+    if (unknown.length > 0) {
+      const available = tags.map((t) => `${t.name} (id: ${t.id})`).join(", ");
+      return {
+        error: `Unknown tag name(s): ${unknown.join(", ")}. Available tags: ${available}`,
+      };
+    }
+
+    return { tagIds };
+  }
+
   // Issues Tools
 
   server.registerTool(
@@ -128,12 +163,31 @@ export default function apiBasedTools(server) {
           .optional()
           .describe("Issue priority"),
         assigned_user_id: z.string().optional().describe("Assigned user ID"),
-        tag_ids: z.array(z.number()).optional().describe("Array of tag IDs"),
+        tag_ids: z
+          .array(z.number())
+          .optional()
+          .describe(
+            "Array of numeric tag IDs. Only use IDs confirmed via tags-list; prefer tag_names if you only know names."
+          ),
+        tag_names: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Array of tag names (e.g. [\"bug\", \"frontend\"]); resolved to IDs automatically"
+          ),
         apiKey: z.string().describe("API key for authentication"),
       },
     },
     async (params) => {
-      const { apiKey, ...issueData } = params;
+      const { apiKey, tag_names, ...issueData } = params;
+
+      if (tag_names?.length) {
+        const resolved = await resolveTagNames(tag_names, apiKey);
+        if (resolved.error) {
+          return { content: [{ type: "text", text: resolved.error }], isError: true };
+        }
+        issueData.tag_ids = [...new Set([...(issueData.tag_ids ?? []), ...resolved.tagIds])];
+      }
 
       const result = await makeRequest(
         "POST",
@@ -200,12 +254,31 @@ export default function apiBasedTools(server) {
           .optional()
           .describe("Issue priority"),
         assigned_user_id: z.string().optional().describe("Assigned user ID"),
-        tag_ids: z.array(z.number()).optional().describe("Array of tag IDs"),
+        tag_ids: z
+          .array(z.number())
+          .optional()
+          .describe(
+            "Array of numeric tag IDs. Only use IDs confirmed via tags-list; prefer tag_names if you only know names."
+          ),
+        tag_names: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Array of tag names (e.g. [\"bug\", \"frontend\"]); resolved to IDs automatically"
+          ),
         apiKey: z.string().describe("API key for authentication"),
       },
     },
     async (params) => {
-      const { id, apiKey, ...updateData } = params;
+      const { id, apiKey, tag_names, ...updateData } = params;
+
+      if (tag_names?.length) {
+        const resolved = await resolveTagNames(tag_names, apiKey);
+        if (resolved.error) {
+          return { content: [{ type: "text", text: resolved.error }], isError: true };
+        }
+        updateData.tag_ids = [...new Set([...(updateData.tag_ids ?? []), ...resolved.tagIds])];
+      }
 
       const result = await makeRequest(
         "PUT",
