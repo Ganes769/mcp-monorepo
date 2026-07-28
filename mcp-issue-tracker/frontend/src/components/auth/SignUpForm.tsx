@@ -62,7 +62,7 @@ export default function SignUpForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {error}
+                {typeof error === "string" ? error : "Sign up failed"}
               </div>
             )}
             

@@ -4,12 +4,35 @@ import { isAxiosError } from 'axios';
 import type { AuthState } from '@/types';
 import { authApi } from '@/lib/api';
 
-// Surface the server's actual error (e.g. Better Auth's "Password is too
-// short") instead of Axios's generic "Request failed with status code 400".
+// Better Auth / Fastify errors may be a string, or an object like
+// { code, message } / { error: { code, message } }. Always return a string
+// so React never tries to render an object (minified error #31).
+function toErrorString(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.message === "string" && obj.message.trim()) {
+      return obj.message;
+    }
+    if (typeof obj.error === "string" && obj.error.trim()) {
+      return obj.error;
+    }
+    if (obj.error && typeof obj.error === "object") {
+      return toErrorString(obj.error);
+    }
+  }
+  return undefined;
+}
+
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {
-    const data = error.response?.data as { message?: string; error?: string } | undefined;
-    return data?.message || data?.error || error.message || fallback;
+    return (
+      toErrorString(error.response?.data) ||
+      error.message ||
+      fallback
+    );
   }
   return error instanceof Error ? error.message : fallback;
 }
