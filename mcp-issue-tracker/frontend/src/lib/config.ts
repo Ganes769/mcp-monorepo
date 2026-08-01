@@ -1,8 +1,8 @@
-export const PRODUCTION_API_URL = "https://mcp-monorepo-yccf.vercel.app/api";
+// Prefer same-origin `/api` in production (see frontend/vercel.json rewrite).
+// That keeps session cookies first-party. Absolute URLs still work as an
+// override via VITE_API_URL, but require SameSite=None cookies on the API.
+export const PRODUCTION_API_URL = "/api";
 
-// Vercel project env often sets VITE_API_URL=/api for local-style proxying.
-// That value must NOT be baked into production builds, or the SPA will call
-// itself (mcp-monorepo.vercel.app/api/...) and get 404s for every API request.
 const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
 const isAbsoluteApiUrl = Boolean(envUrl && /^https?:\/\//i.test(envUrl));
 

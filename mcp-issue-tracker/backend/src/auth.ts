@@ -11,6 +11,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const baseUrl = process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:3000";
 
+// Frontend (mcp-monorepo.vercel.app) and API (mcp-monorepo-yccf.vercel.app) are
+// different sites. SameSite=Lax cookies are not sent on cross-site XHR, which
+// makes every authenticated route return 401 in production. Use None+Secure
+// whenever the auth base URL is https (deployed) so the session cookie is
+// attached to credentialed requests from the SPA.
+const useCrossSiteCookies =
+  process.env.AUTH_COOKIE_SAME_SITE === "none" ||
+  (baseUrl.startsWith("https://") &&
+    process.env.AUTH_COOKIE_SAME_SITE !== "lax");
+
 // Better Auth cannot consume a raw @libsql/client instance; it needs a
 // Kysely dialect (or a better-sqlite3 Database) as its `database` option.
 async function createAuthDatabase() {
@@ -53,6 +63,17 @@ const authConfig = {
     enabled: true,
   },
   trustedOrigins: [...getTrustedOriginPatterns(), baseUrl],
+  ...(useCrossSiteCookies
+    ? {
+        advanced: {
+          useSecureCookies: true,
+          defaultCookieAttributes: {
+            sameSite: "none" as const,
+            secure: true,
+          },
+        },
+      }
+    : {}),
   plugins: [
     apiKey({
       defaultPrefix: "issues_",
