@@ -11,3 +11,9 @@ export const API_BASE_URL = import.meta.env.PROD
     ? envUrl!
     : PRODUCTION_API_URL
   : envUrl || "/api";
+
+/** Remote Issue Tracker MCP endpoint (Cloudflare Workers) for Claude / Cursor */
+export const MCP_SERVER_URL =
+  "https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp";
+
+export const GITHUB_REPO_URL = "https://github.com/Ganes769/mcp-monorepo";

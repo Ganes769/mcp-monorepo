@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth, SignOutButton, ApiKeyCopyButton } from "@/components/auth";
+import { ClaudeConnectGuide } from "@/components/common/ClaudeConnectGuide";
 
 interface LayoutProps {
   children: ReactNode;
@@ -42,13 +43,14 @@ export default function Layout({ children }: LayoutProps) {
               </nav>
             </div>
             <div className="flex items-center space-x-2">
+              <ClaudeConnectGuide />
               {isLoading ? (
                 <div className="animate-pulse text-sm text-muted-foreground">
                   Loading...
                 </div>
               ) : isAuthenticated && user ? (
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground hidden md:inline">
                     Welcome, {user.name}
                   </span>
                   <ApiKeyCopyButton />
