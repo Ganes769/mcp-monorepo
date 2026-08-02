@@ -1,6 +1,20 @@
 # Issue Tracker
 
-A modern, full-stack issue tracking application built with React, Fastify, and SQLite.
+A modern, full-stack issue tracking application built with React, Fastify, and SQLite — plus **MCP** so AI agents can manage issues.
+
+**Monorepo:** [https://github.com/Ganes769/mcp-monorepo](https://github.com/Ganes769/mcp-monorepo)
+
+| | URL |
+|---|---|
+| Live app | [https://mcp-monorepo.vercel.app](https://mcp-monorepo.vercel.app) |
+| API | [https://mcp-monorepo-yccf.vercel.app/api](https://mcp-monorepo-yccf.vercel.app/api) |
+| Remote MCP | [https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp](https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp) |
+
+## AI skill highlight
+
+Built with **Cursor** and exposed via **Model Context Protocol (MCP)** so Claude / Cursor agents can `create_issue`, assign users, set priority, and triage against the live API — not just chat about issues.
+
+Remote MCP docs: [`../issue-tracker-mcp/README.md`](../issue-tracker-mcp/README.md)
 
 ## Features
 
@@ -9,6 +23,7 @@ A modern, full-stack issue tracking application built with React, Fastify, and S
 - 🏷️ **Tag System** - Organize issues with customizable tags
 - 🔍 **Advanced Filtering** - Filter by status, priority, assignee, tags, and search
 - 👥 **User Management** - Assign issues to team members
+- 🤖 **MCP / AI agents** - Remote + local MCP tools for Claude and Cursor
 - 📱 **Responsive Design** - Works great on desktop and mobile
 - ⚡ **Fast & Modern** - Built with modern web technologies
 

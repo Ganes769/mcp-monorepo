@@ -1,8 +1,20 @@
 # Issue Tracker MCP (Cloudflare Workers)
 
-Remote MCP server for the deployed Issue Tracker API. Tools proxy to:
+**GitHub monorepo:** [https://github.com/Ganes769/mcp-monorepo](https://github.com/Ganes769/mcp-monorepo)  
+**This package:** [`issue-tracker-mcp/`](https://github.com/Ganes769/mcp-monorepo/tree/main/issue-tracker-mcp)
+
+Remote MCP server for the deployed Issue Tracker API — the AI skill layer that lets Claude / Cursor create and manage real issues.
+
+Tools proxy to:
 
 `https://mcp-monorepo-yccf.vercel.app/api`
+
+### AI skill highlight
+
+- Built with **Cursor** agents against a real Fastify + Turso backend
+- Deployed on **Cloudflare Workers** as Streamable HTTP MCP (`/mcp`)
+- Primary tool: **`create_issue`** (title, priority/severity, assignee, tags)
+- Connect from **Claude web**, Claude Desktop, or Cursor via the URL below
 
 For now, tools take **`apiKey` in chat** (paste your Issue Tracker API key when calling a tool).
 
