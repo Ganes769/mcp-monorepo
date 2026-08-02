@@ -18,34 +18,75 @@ npm create cloudflare@latest -- my-mcp-server --template=cloudflare/ai/demos/rem
 
 To add your own [tools](https://developers.cloudflare.com/agents/model-context-protocol/protocol/tools/) to the MCP server, register each tool on the `McpServer` created in the `createServer()` function in `src/index.ts` using `server.registerTool(...)`.
 
+## Deployed MCP URL
+
+```text
+https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp
+```
+
+## Connect to Claude web (claude.ai)
+
+Claude web only supports **remote** MCP connectors (not local `main.js`).
+
+1. Open [https://claude.ai](https://claude.ai) and sign in
+2. Go to **Settings** → **Connectors** (or **Customize** → **Connectors**)
+3. Click **+** → **Add custom connector**
+4. Enter:
+   - **Name:** `issue-tracker`
+   - **URL:** `https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp`
+5. Click **Add**, then **Connect** if prompted
+6. Start a **new chat** and ask Claude to use a tool (e.g. “Use the add tool to add 2 and 3”)
+
+Notes:
+- Opening the URL in a browser may show `Method not allowed` — that is expected for GET. Use Claude or the playground instead.
+- Free plans are usually limited to one custom connector.
+- On Team/Enterprise, an admin may need to add the connector first.
+
 ## Connect to Cloudflare AI Playground
 
-You can connect to your MCP server from the Cloudflare AI Playground, which is a remote MCP client:
-
 1. Go to https://playground.ai.cloudflare.com/
-2. Enter your deployed MCP server URL (`remote-mcp-server-authless.<your-account>.workers.dev/mcp`)
-3. You can now use your MCP tools directly from the playground!
+2. Enter: `https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp`
+3. Use the available MCP tools from the playground
 
 ## Connect Claude Desktop to your MCP server
 
-You can also connect to your remote MCP server from local MCP clients, by using the [mcp-remote proxy](https://www.npmjs.com/package/mcp-remote).
+### Option A — Remote Worker (same URL as Claude web)
 
-To connect to your MCP server from Claude Desktop, follow [Anthropic's Quickstart](https://modelcontextprotocol.io/quickstart/user) and within Claude Desktop go to Settings > Developer > Edit Config.
-
-Update with this configuration:
+In Claude Desktop go to **Settings → Developer → Edit Config** and add:
 
 ```json
 {
 	"mcpServers": {
-		"calculator": {
+		"issue-tracker": {
 			"command": "npx",
 			"args": [
 				"mcp-remote",
-				"http://localhost:8787/mcp" // or remote-mcp-server-authless.your-account.workers.dev/mcp
+				"https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp"
 			]
 		}
 	}
 }
 ```
 
-Restart Claude and you should see the tools become available.
+Fully quit and reopen Claude Desktop. Tools should appear under the tools/hammer icon.
+
+### Option B — Local MCP (stdio)
+
+Point Claude Desktop at the local issue-tracker MCP and your deployed API:
+
+```json
+{
+	"mcpServers": {
+		"issue-tracker": {
+			"command": "/usr/local/bin/node",
+			"args": ["/Volumes/GaNesh/my-mcp/mcp-issue-tracker/mcp/main.js"],
+			"env": {
+				"API_BASE_URL": "https://mcp-monorepo-yccf.vercel.app/api",
+				"NODE_OPTIONS": "--no-deprecation"
+			}
+		}
+	}
+}
+```
+
+Run `npm install` inside `mcp-issue-tracker/mcp` first if dependencies are missing.
