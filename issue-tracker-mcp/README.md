@@ -1,27 +1,31 @@
-# Building a Remote MCP Server on Cloudflare (Without Auth)
+# Issue Tracker MCP (Cloudflare Workers)
 
-This example allows you to deploy a stateless remote MCP server that doesn't require authentication on Cloudflare Workers. It implements the MCP 2026-07-28 specification while remaining compatible with legacy clients for ordinary tool calls.
+Remote MCP server for the deployed Issue Tracker API. Tools proxy to:
 
-## Get started:
+`https://mcp-monorepo-yccf.vercel.app/api`
 
-[![Deploy to Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/ai/tree/main/demos/remote-mcp-authless)
+## Tools
 
-This will deploy your MCP server to a URL like: `remote-mcp-server-authless.<your-account>.workers.dev/mcp`
+- `issues-list`, `issues-create`, `issues-get`, `issues-update`, `issues-delete`
+- `tags-list`, `tags-create`, `tags-delete`
+- `users-list`, `api-key-verify`, `health-status`
 
-Alternatively, you can use the command line below to get the remote MCP Server created on your local machine:
-
-```bash
-npm create cloudflare@latest -- my-mcp-server --template=cloudflare/ai/demos/remote-mcp-authless
-```
-
-## Customizing your MCP Server
-
-To add your own [tools](https://developers.cloudflare.com/agents/model-context-protocol/protocol/tools/) to the MCP server, register each tool on the `McpServer` created in the `createServer()` function in `src/index.ts` using `server.registerTool(...)`.
+Most tools require an `apiKey` from the Issue Tracker web app (sign in → create API key).
 
 ## Deployed MCP URL
 
 ```text
 https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp
+```
+
+## Deploy / update
+
+```bash
+cd issue-tracker-mcp
+npx wrangler secret put API_BASE_URL
+# value: https://mcp-monorepo-yccf.vercel.app/api
+
+npx wrangler deploy
 ```
 
 ## Connect to Claude web (claude.ai)
@@ -35,7 +39,8 @@ Claude web only supports **remote** MCP connectors (not local `main.js`).
    - **Name:** `issue-tracker`
    - **URL:** `https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp`
 5. Click **Add**, then **Connect** if prompted
-6. Start a **new chat** and ask Claude to use a tool (e.g. “Use the add tool to add 2 and 3”)
+6. Start a **new chat** and ask Claude to use a tool, e.g.  
+   “List issues using apiKey `<your-key>`”
 
 Notes:
 - Opening the URL in a browser may show `Method not allowed` — that is expected for GET. Use Claude or the playground instead.
