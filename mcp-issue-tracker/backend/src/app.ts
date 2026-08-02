@@ -158,9 +158,14 @@ export async function buildApp(
             },
           });
 
-          // Delete all existing API keys for this user
+          // Delete personal keys only. Keep purpose=mcp keys so MCP/service
+          // integrations are not broken every time the UI regenerates a key.
           if (existingKeys && Array.isArray(existingKeys)) {
             for (const key of existingKeys) {
+              const purpose = (key as { metadata?: { purpose?: string } })
+                ?.metadata?.purpose;
+              if (purpose === "mcp") continue;
+
               try {
                 await auth.api.deleteApiKey({
                   body: { keyId: key.id },

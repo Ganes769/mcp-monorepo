@@ -15,9 +15,10 @@ export function ApiKeyCopyButton() {
     setLoading(true);
     
     try {
-      // Generate a new API key (this invalidates previous keys)
+      // Regenerates the personal API key shown in the UI.
+      // MCP uses a separate MCP_SERVICE_TOKEN and is not affected.
       const response = await authApi.generateNewApiKey();
-      
+
       if (!response.success || !response.apiKey?.key) {
         throw new Error("Failed to generate API key");
       }
@@ -42,7 +43,9 @@ export function ApiKeyCopyButton() {
       }
 
       setCopied(true);
-      toast.success("New API key copied to clipboard!");
+      toast.success(
+        "New personal API key copied. MCP connector uses a separate stable token.",
+      );
       
       // Reset the copied state after 2 seconds
       setTimeout(() => setCopied(false), 2000);

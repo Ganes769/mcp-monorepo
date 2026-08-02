@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { auth } from "./auth.js";
+import { getDatabase } from "./db/database.js";
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user?: {
@@ -26,14 +27,90 @@ function convertHeaders(requestHeaders: FastifyRequest["headers"]): Headers {
   return headers;
 }
 
+function getProvidedServiceToken(request: FastifyRequest): string | undefined {
+  const apiKeyHeader = request.headers["x-api-key"];
+  const mcpHeader = request.headers["x-mcp-service-token"];
+  const fromApiKey = Array.isArray(apiKeyHeader)
+    ? apiKeyHeader[0]
+    : apiKeyHeader;
+  const fromMcp = Array.isArray(mcpHeader) ? mcpHeader[0] : mcpHeader;
+
+  const authHeader = request.headers.authorization;
+  const bearer =
+    typeof authHeader === "string" && authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : undefined;
+
+  return (fromMcp || fromApiKey || bearer)?.trim() || undefined;
+}
+
+/**
+ * Stable MCP/service auth that does NOT use Better Auth API keys.
+ * Set once on the host:
+ *   MCP_SERVICE_TOKEN=<long random string>
+ *   MCP_SERVICE_USER_EMAIL=<existing user email to act as>
+ * Cloudflare Worker stores the same token in ISSUES_API_KEY.
+ * Regenerating personal API keys in the UI will not break MCP.
+ */
+async function tryServiceTokenAuth(
+  request: AuthenticatedRequest,
+): Promise<boolean> {
+  const expected = process.env.MCP_SERVICE_TOKEN?.trim();
+  if (!expected) return false;
+
+  const provided = getProvidedServiceToken(request);
+  if (!provided || provided !== expected) return false;
+
+  const email = process.env.MCP_SERVICE_USER_EMAIL?.trim();
+  if (!email) {
+    console.error(
+      "MCP_SERVICE_TOKEN is set but MCP_SERVICE_USER_EMAIL is missing",
+    );
+    return false;
+  }
+
+  const db = await getDatabase();
+  try {
+    const user = await db.get(
+      `SELECT id, name, email, emailVerified, image, createdAt, updatedAt
+       FROM user WHERE lower(email) = lower(?) LIMIT 1`,
+      [email],
+    );
+
+    if (!user) {
+      console.error(
+        `MCP_SERVICE_USER_EMAIL "${email}" does not match any user`,
+      );
+      return false;
+    }
+
+    request.user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      emailVerified: Boolean(user.emailVerified),
+      image: user.image ?? null,
+      createdAt: new Date(user.createdAt),
+      updatedAt: new Date(user.updatedAt),
+    };
+    return true;
+  } finally {
+    await db.close();
+  }
+}
+
 export async function authMiddleware(
   request: AuthenticatedRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
+    if (await tryServiceTokenAuth(request)) {
+      return;
+    }
+
     const headers = convertHeaders(request.headers);
 
-    // Get session from BetterAuth
+    // Cookie session or Better Auth personal API key (x-api-key)
     const session = await auth.api.getSession({
       headers: headers,
     });
@@ -45,7 +122,6 @@ export async function authMiddleware(
       });
     }
 
-    // Attach user to request
     request.user = {
       ...session.user,
       image: session.user.image ?? null,
@@ -59,15 +135,16 @@ export async function authMiddleware(
   }
 }
 
-// Optional auth middleware (doesn't fail if no auth)
 export async function optionalAuthMiddleware(
   request: AuthenticatedRequest,
-  reply: FastifyReply
+  _reply: FastifyReply,
 ) {
   try {
-    const headers = convertHeaders(request.headers);
+    if (await tryServiceTokenAuth(request)) {
+      return;
+    }
 
-    // Get session from BetterAuth
+    const headers = convertHeaders(request.headers);
     const session = await auth.api.getSession({
       headers: headers,
     });
@@ -79,7 +156,6 @@ export async function optionalAuthMiddleware(
       };
     }
   } catch (error) {
-    // Silently fail for optional auth
     console.debug("Optional auth failed:", error);
   }
 }

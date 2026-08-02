@@ -7,11 +7,13 @@ const DEFAULT_API_BASE_URL = "https://mcp-monorepo-yccf.vercel.app/api";
 function createServer(env: Env) {
 	const server = new McpServer({
 		name: "issue-tracker",
-		version: "1.0.0",
+		version: "1.2.0",
 	});
 
-	const apiBaseUrl = env.API_BASE_URL || DEFAULT_API_BASE_URL;
-	registerIssueTrackerTools(server, apiBaseUrl);
+	registerIssueTrackerTools(server, {
+		apiBaseUrl: env.API_BASE_URL || DEFAULT_API_BASE_URL,
+		apiKey: env.ISSUES_API_KEY,
+	});
 
 	return server;
 }

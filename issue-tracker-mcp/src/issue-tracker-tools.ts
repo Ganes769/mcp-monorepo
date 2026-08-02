@@ -7,8 +7,15 @@ type ApiResult = {
 	status: number;
 	data?: unknown;
 	error?: string;
-	headers?: Record<string, string>;
 };
+
+export type IssueTrackerConfig = {
+	apiBaseUrl?: string;
+	/** Optional Worker secret fallback if the chat does not pass apiKey */
+	apiKey?: string;
+};
+
+type UserRow = { id: string; name: string; email: string };
 
 async function makeRequest(
 	method: string,
@@ -34,11 +41,7 @@ async function makeRequest(
 			// keep raw text
 		}
 
-		return {
-			status: response.status,
-			data: jsonResult,
-			headers: Object.fromEntries(response.headers.entries()),
-		};
+		return { status: response.status, data: jsonResult };
 	} catch (error) {
 		return {
 			status: 0,
@@ -52,6 +55,14 @@ function textResult(result: unknown, isError = false) {
 		content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
 		...(isError ? { isError: true } : {}),
 	};
+}
+
+function resolveKey(
+	provided: string | undefined,
+	fallback: string,
+): string | null {
+	const key = (provided || fallback || "").trim();
+	return key || null;
 }
 
 async function resolveTagNames(
@@ -91,26 +102,144 @@ async function resolveTagNames(
 	return { tagIds };
 }
 
+async function resolveAssignee(
+	apiBaseUrl: string,
+	apiKey: string,
+	assignee: string,
+): Promise<{ userId: string } | { error: string }> {
+	const result = await makeRequest("GET", `${apiBaseUrl}/users`, null, {
+		"x-api-key": apiKey,
+	});
+	const users = (result?.data as { data?: UserRow[] })?.data;
+	if (!Array.isArray(users)) {
+		return {
+			error: `Could not resolve assignee: ${JSON.stringify(result?.data ?? result?.error)}`,
+		};
+	}
+
+	const needle = assignee.trim().toLowerCase();
+	const match = users.find(
+		(u) =>
+			u.email?.toLowerCase() === needle ||
+			u.name?.toLowerCase() === needle ||
+			u.id === assignee.trim(),
+	);
+
+	if (!match) {
+		const available = users.map((u) => `${u.name} <${u.email}>`).join(", ");
+		return {
+			error: `Unknown assignee "${assignee}". Available users: ${available}`,
+		};
+	}
+
+	return { userId: match.id };
+}
+
+function mapPriority(
+	priority?: "low" | "medium" | "high" | "urgent",
+	severity?: "low" | "medium" | "high" | "critical",
+): "low" | "medium" | "high" | "urgent" | undefined {
+	if (priority) return priority;
+	if (!severity) return undefined;
+	if (severity === "critical") return "urgent";
+	return severity;
+}
+
+const apiKeyField = z
+	.string()
+	.describe(
+		"Issue Tracker API key (paste from the app for now). Sent as x-api-key.",
+	);
+
 export function registerIssueTrackerTools(
 	server: McpServer,
-	apiBaseUrl = DEFAULT_API_BASE_URL,
+	config: IssueTrackerConfig = {},
 ) {
-	const base = apiBaseUrl.replace(/\/$/, "");
+	const base = (config.apiBaseUrl || DEFAULT_API_BASE_URL).replace(/\/$/, "");
+	const fallbackKey = config.apiKey?.trim() || "";
 
 	server.registerTool(
-		"issues-list",
+		"create_issue",
 		{
-			description: "Get a list of issues with optional filtering",
+			description:
+				"Create a new issue. Pass apiKey from the Issue Tracker app in chat for now.",
 			inputSchema: z.object({
+				apiKey: apiKeyField,
+				title: z.string().describe("Issue title"),
+				description: z.string().optional().describe("Issue description"),
+				priority: z
+					.enum(["low", "medium", "high", "urgent"])
+					.optional()
+					.describe("Issue priority"),
+				severity: z
+					.enum(["low", "medium", "high", "critical"])
+					.optional()
+					.describe("Optional severity; mapped to priority if priority omitted"),
+				status: z
+					.enum(["not_started", "in_progress", "done"])
+					.optional()
+					.describe("Issue status"),
+				assignee: z
+					.string()
+					.optional()
+					.describe("Assignee email, name, or user id"),
+				tag_names: z
+					.array(z.string())
+					.optional()
+					.describe('Tag names, e.g. ["bug", "frontend"]'),
+			}),
+		},
+		async (params) => {
+			const apiKey = resolveKey(params.apiKey, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+
+			const body: Record<string, unknown> = {
+				title: params.title,
+				description: params.description,
+				status: params.status,
+				priority: mapPriority(params.priority, params.severity),
+			};
+
+			if (params.assignee) {
+				const resolved = await resolveAssignee(base, apiKey, params.assignee);
+				if ("error" in resolved) return textResult(resolved.error, true);
+				body.assigned_user_id = resolved.userId;
+			}
+
+			if (params.tag_names?.length) {
+				const resolved = await resolveTagNames(base, params.tag_names, apiKey);
+				if ("error" in resolved) return textResult(resolved.error, true);
+				body.tag_ids = resolved.tagIds;
+			}
+
+			return textResult(
+				await makeRequest("POST", `${base}/issues`, body, {
+					"x-api-key": apiKey,
+				}),
+			);
+		},
+	);
+
+	server.registerTool(
+		"list_issues",
+		{
+			description: "List issues with optional filters. Pass apiKey in chat.",
+			inputSchema: z.object({
+				apiKey: apiKeyField,
 				status: z
 					.enum(["not_started", "in_progress", "done"])
 					.optional()
 					.describe("Filter by status"),
-				assigned_user_id: z
+				priority: z
+					.enum(["low", "medium", "high"])
+					.optional()
+					.describe("Filter by priority"),
+				assignee: z
 					.string()
 					.optional()
-					.describe("Filter by assigned user ID"),
-				tag_ids: z.string().optional().describe("Comma-separated tag IDs"),
+					.describe("Filter by assignee email, name, or user id"),
 				search: z
 					.string()
 					.optional()
@@ -120,25 +249,27 @@ export function registerIssueTrackerTools(
 					.number()
 					.optional()
 					.describe("Items per page (default: 10, max: 100)"),
-				priority: z
-					.enum(["low", "medium", "high"])
-					.optional()
-					.describe("Filter by priority"),
-				created_by_user_id: z
-					.string()
-					.optional()
-					.describe("Filter by creator user ID"),
-				apiKey: z.string().describe("API key for authentication"),
 			}),
 		},
 		async (params) => {
-			const { apiKey, ...queryParams } = params;
-			const searchParams = new URLSearchParams();
-			for (const [key, value] of Object.entries(queryParams)) {
-				if (value !== undefined && value !== null) {
-					searchParams.append(key, String(value));
-				}
+			const apiKey = resolveKey(params.apiKey, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
 			}
+
+			const searchParams = new URLSearchParams();
+			if (params.status) searchParams.set("status", params.status);
+			if (params.priority) searchParams.set("priority", params.priority);
+			if (params.search) searchParams.set("search", params.search);
+			if (params.page != null) searchParams.set("page", String(params.page));
+			if (params.limit != null) searchParams.set("limit", String(params.limit));
+
+			if (params.assignee) {
+				const resolved = await resolveAssignee(base, apiKey, params.assignee);
+				if ("error" in resolved) return textResult(resolved.error, true);
+				searchParams.set("assigned_user_id", resolved.userId);
+			}
+
 			const url = `${base}/issues${
 				searchParams.toString() ? `?${searchParams.toString()}` : ""
 			}`;
@@ -149,43 +280,21 @@ export function registerIssueTrackerTools(
 	);
 
 	server.registerTool(
-		"issues-create",
+		"get_issue",
 		{
-			description: "Create a new issue",
+			description: "Get one issue by ID. Pass apiKey in chat.",
 			inputSchema: z.object({
-				title: z.string().describe("Issue title"),
-				description: z.string().optional().describe("Issue description"),
-				status: z
-					.enum(["not_started", "in_progress", "done"])
-					.optional()
-					.describe("Issue status"),
-				priority: z
-					.enum(["low", "medium", "high", "urgent"])
-					.optional()
-					.describe("Issue priority"),
-				assigned_user_id: z.string().optional().describe("Assigned user ID"),
-				tag_ids: z
-					.array(z.number())
-					.optional()
-					.describe("Numeric tag IDs from tags-list"),
-				tag_names: z
-					.array(z.string())
-					.optional()
-					.describe('Tag names (e.g. ["bug"]); resolved to IDs automatically'),
-				apiKey: z.string().describe("API key for authentication"),
+				apiKey: apiKeyField,
+				id: z.number().describe("Issue ID"),
 			}),
 		},
-		async (params) => {
-			const { apiKey, tag_names, ...issueData } = params;
-			if (tag_names?.length) {
-				const resolved = await resolveTagNames(base, tag_names, apiKey);
-				if ("error" in resolved) return textResult(resolved.error, true);
-				issueData.tag_ids = [
-					...new Set([...(issueData.tag_ids ?? []), ...resolved.tagIds]),
-				];
+		async ({ id, apiKey: provided }) => {
+			const apiKey = resolveKey(provided, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
 			}
 			return textResult(
-				await makeRequest("POST", `${base}/issues`, issueData, {
+				await makeRequest("GET", `${base}/issues/${id}`, null, {
 					"x-api-key": apiKey,
 				}),
 			);
@@ -193,27 +302,11 @@ export function registerIssueTrackerTools(
 	);
 
 	server.registerTool(
-		"issues-get",
+		"update_issue",
 		{
-			description: "Get a specific issue by its ID",
+			description: "Update an issue. Pass apiKey in chat.",
 			inputSchema: z.object({
-				id: z.number().describe("Issue ID"),
-				apiKey: z.string().describe("API key for authentication"),
-			}),
-		},
-		async ({ id, apiKey }) =>
-			textResult(
-				await makeRequest("GET", `${base}/issues/${id}`, null, {
-					"x-api-key": apiKey,
-				}),
-			),
-	);
-
-	server.registerTool(
-		"issues-update",
-		{
-			description: "Update an existing issue",
-			inputSchema: z.object({
+				apiKey: apiKeyField,
 				id: z.number().describe("Issue ID"),
 				title: z.string().optional().describe("Issue title"),
 				description: z.string().optional().describe("Issue description"),
@@ -225,26 +318,36 @@ export function registerIssueTrackerTools(
 					.enum(["low", "medium", "high"])
 					.optional()
 					.describe("Issue priority"),
-				assigned_user_id: z.string().optional().describe("Assigned user ID"),
-				tag_ids: z.array(z.number()).optional().describe("Numeric tag IDs"),
-				tag_names: z
-					.array(z.string())
+				assignee: z
+					.string()
 					.optional()
-					.describe("Tag names resolved to IDs automatically"),
-				apiKey: z.string().describe("API key for authentication"),
+					.describe("Assignee email, name, or user id"),
+				tag_names: z.array(z.string()).optional().describe("Tag names"),
 			}),
 		},
 		async (params) => {
-			const { id, apiKey, tag_names, ...updateData } = params;
+			const apiKey = resolveKey(params.apiKey, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+
+			const { id, assignee, tag_names, apiKey: _k, ...rest } = params;
+			const body: Record<string, unknown> = { ...rest };
+
+			if (assignee) {
+				const resolved = await resolveAssignee(base, apiKey, assignee);
+				if ("error" in resolved) return textResult(resolved.error, true);
+				body.assigned_user_id = resolved.userId;
+			}
+
 			if (tag_names?.length) {
 				const resolved = await resolveTagNames(base, tag_names, apiKey);
 				if ("error" in resolved) return textResult(resolved.error, true);
-				updateData.tag_ids = [
-					...new Set([...(updateData.tag_ids ?? []), ...resolved.tagIds]),
-				];
+				body.tag_ids = resolved.tagIds;
 			}
+
 			return textResult(
-				await makeRequest("PUT", `${base}/issues/${id}`, updateData, {
+				await makeRequest("PUT", `${base}/issues/${id}`, body, {
 					"x-api-key": apiKey,
 				}),
 			);
@@ -252,109 +355,96 @@ export function registerIssueTrackerTools(
 	);
 
 	server.registerTool(
-		"issues-delete",
+		"delete_issue",
 		{
-			description: "Delete an issue by ID",
+			description: "Delete an issue by ID. Pass apiKey in chat.",
 			inputSchema: z.object({
+				apiKey: apiKeyField,
 				id: z.number().describe("Issue ID"),
-				apiKey: z.string().describe("API key for authentication"),
 			}),
 		},
-		async ({ id, apiKey }) =>
-			textResult(
+		async ({ id, apiKey: provided }) => {
+			const apiKey = resolveKey(provided, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+			return textResult(
 				await makeRequest("DELETE", `${base}/issues/${id}`, null, {
 					"x-api-key": apiKey,
 				}),
-			),
+			);
+		},
 	);
 
 	server.registerTool(
-		"tags-list",
+		"list_users",
 		{
-			description: "Get all available tags",
+			description: "List users for assignees. Pass apiKey in chat.",
 			inputSchema: z.object({
-				apiKey: z.string().describe("API key for authentication"),
+				apiKey: apiKeyField,
 			}),
 		},
-		async ({ apiKey }) =>
-			textResult(
-				await makeRequest("GET", `${base}/tags`, null, {
-					"x-api-key": apiKey,
-				}),
-			),
-	);
-
-	server.registerTool(
-		"tags-create",
-		{
-			description: "Create a new tag",
-			inputSchema: z.object({
-				name: z.string().describe("Tag name"),
-				color: z.string().describe("Tag color (hex format)"),
-				apiKey: z.string().describe("API key for authentication"),
-			}),
-		},
-		async ({ apiKey, ...tagData }) =>
-			textResult(
-				await makeRequest("POST", `${base}/tags`, tagData, {
-					"x-api-key": apiKey,
-				}),
-			),
-	);
-
-	server.registerTool(
-		"tags-delete",
-		{
-			description: "Delete a tag by ID",
-			inputSchema: z.object({
-				id: z.number().describe("Tag ID"),
-				apiKey: z.string().describe("API key for authentication"),
-			}),
-		},
-		async ({ id, apiKey }) =>
-			textResult(
-				await makeRequest("DELETE", `${base}/tags/${id}`, null, {
-					"x-api-key": apiKey,
-				}),
-			),
-	);
-
-	server.registerTool(
-		"users-list",
-		{
-			description: "Get all users",
-			inputSchema: z.object({
-				apiKey: z.string().describe("API key for authentication"),
-			}),
-		},
-		async ({ apiKey }) =>
-			textResult(
+		async ({ apiKey: provided }) => {
+			const apiKey = resolveKey(provided, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+			return textResult(
 				await makeRequest("GET", `${base}/users`, null, {
 					"x-api-key": apiKey,
 				}),
-			),
+			);
+		},
 	);
 
 	server.registerTool(
-		"api-key-verify",
+		"list_tags",
 		{
-			description: "Verify if an API key is valid",
+			description: "List tags. Pass apiKey in chat.",
 			inputSchema: z.object({
-				apiKey: z.string().describe("API key to verify"),
+				apiKey: apiKeyField,
 			}),
 		},
-		async ({ apiKey }) =>
-			textResult(
-				await makeRequest("POST", `${base}/auth/api-key/verify`, {
-					key: apiKey,
+		async ({ apiKey: provided }) => {
+			const apiKey = resolveKey(provided, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+			return textResult(
+				await makeRequest("GET", `${base}/tags`, null, {
+					"x-api-key": apiKey,
 				}),
-			),
+			);
+		},
 	);
 
 	server.registerTool(
-		"health-status",
+		"create_tag",
 		{
-			description: "Get the health status of the issue tracker API",
+			description: "Create a tag. Pass apiKey in chat.",
+			inputSchema: z.object({
+				apiKey: apiKeyField,
+				name: z.string().describe("Tag name"),
+				color: z.string().describe("Tag color hex, e.g. #ff0000"),
+			}),
+		},
+		async ({ apiKey: provided, ...tagData }) => {
+			const apiKey = resolveKey(provided, fallbackKey);
+			if (!apiKey) {
+				return textResult({ error: "apiKey is required" }, true);
+			}
+			return textResult(
+				await makeRequest("POST", `${base}/tags`, tagData, {
+					"x-api-key": apiKey,
+				}),
+			);
+		},
+	);
+
+	server.registerTool(
+		"health_status",
+		{
+			description: "Check Issue Tracker API health (no apiKey needed).",
 			inputSchema: z.object({}),
 		},
 		async () =>

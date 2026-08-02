@@ -4,13 +4,15 @@ Remote MCP server for the deployed Issue Tracker API. Tools proxy to:
 
 `https://mcp-monorepo-yccf.vercel.app/api`
 
+For now, tools take **`apiKey` in chat** (paste your Issue Tracker API key when calling a tool).
+
+Optional later: set Worker secret `ISSUES_API_KEY` / backend `MCP_SERVICE_TOKEN` so you don’t need to paste the key.
+
 ## Tools
 
-- `issues-list`, `issues-create`, `issues-get`, `issues-update`, `issues-delete`
-- `tags-list`, `tags-create`, `tags-delete`
-- `users-list`, `api-key-verify`, `health-status`
-
-Most tools require an `apiKey` from the Issue Tracker web app (sign in → create API key).
+- `create_issue` — apiKey, title, description, priority/severity, status, assignee, tag_names
+- `list_issues`, `get_issue`, `update_issue`, `delete_issue` (all take apiKey)
+- `list_users`, `list_tags`, `create_tag`, `health_status`
 
 ## Deployed MCP URL
 
@@ -22,11 +24,25 @@ https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp
 
 ```bash
 cd issue-tracker-mcp
+
+# Point at the deployed API
 npx wrangler secret put API_BASE_URL
 # value: https://mcp-monorepo-yccf.vercel.app/api
 
+# Same stable token as backend MCP_SERVICE_TOKEN (generate once; do not paste into chat)
+# openssl rand -hex 32
+npx wrangler secret put ISSUES_API_KEY
+
 npx wrangler deploy
 ```
+
+Also set on the **Vercel backend** project (once):
+
+```env
+MCP_SERVICE_TOKEN=<same value as ISSUES_API_KEY>
+MCP_SERVICE_USER_EMAIL=<your login email on the issue tracker>
+```
+
 
 ## Connect to Claude web (claude.ai)
 
@@ -34,18 +50,19 @@ Claude web only supports **remote** MCP connectors (not local `main.js`).
 
 1. Open [https://claude.ai](https://claude.ai) and sign in
 2. Go to **Settings** → **Connectors** (or **Customize** → **Connectors**)
-3. Click **+** → **Add custom connector**
-4. Enter:
+3. Remove any old connector that still shows `add` / `calculate`
+4. Click **+** → **Add custom connector**
+5. Enter:
    - **Name:** `issue-tracker`
    - **URL:** `https://issue-tracker-mcp.ganesh-mcp.workers.dev/mcp`
-5. Click **Add**, then **Connect** if prompted
-6. Start a **new chat** and ask Claude to use a tool, e.g.  
-   “List issues using apiKey `<your-key>`”
+6. Click **Add**, then **Connect** if prompted
+7. Start a **new chat** and ask e.g.  
+   “Create an issue titled ‘Fix login 401’ with high priority. Use apiKey `<paste-key>`”
 
 Notes:
-- Opening the URL in a browser may show `Method not allowed` — that is expected for GET. Use Claude or the playground instead.
+- Opening the URL in a browser may show `Method not allowed` — that is expected for GET.
+- If Claude still shows calculator tools, disconnect/reconnect the connector and start a new chat.
 - Free plans are usually limited to one custom connector.
-- On Team/Enterprise, an admin may need to add the connector first.
 
 ## Connect to Cloudflare AI Playground
 

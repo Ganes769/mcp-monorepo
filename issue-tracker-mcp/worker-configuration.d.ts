@@ -4,6 +4,8 @@
 interface __BaseEnv_Env {
 	/** Set with: npx wrangler secret put API_BASE_URL */
 	API_BASE_URL: string;
+	/** Issue Tracker API key (server-side only). npx wrangler secret put ISSUES_API_KEY */
+	ISSUES_API_KEY: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
