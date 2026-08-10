@@ -5,6 +5,8 @@ app: workbridge
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: workbridge
 
+useDotenv: true
+
 provider:
   name: aws
   runtime: python3.14
@@ -29,14 +31,9 @@ provider:
       maxAge: 86400
   environment:
     STAGE: ${sls:stage}
-    # Set these in SSM or override per stage later:
-    # MONDAY_API_TOKEN: ${ssm:/workbridge/${sls:stage}/monday-api-token, ''}
-    # JIRA_BASE_URL: ${ssm:/workbridge/${sls:stage}/jira-base-url, ''}
-    # JIRA_EMAIL: ${ssm:/workbridge/${sls:stage}/jira-email, ''}
-    # JIRA_API_TOKEN: ${ssm:/workbridge/${sls:stage}/jira-api-token, ''}
-    # SLACK_BOT_TOKEN: ${ssm:/workbridge/${sls:stage}/slack-bot-token, ''}
-    # SLACK_SIGNING_SECRET: ${ssm:/workbridge/${sls:stage}/slack-signing-secret, ''}
-    # SLACK_DEFAULT_CHANNEL: ${ssm:/workbridge/${sls:stage}/slack-default-channel, ''}
+    JIRA_BASE_URL: ${env:JIRA_BASE_URL, 'https://ganeshsnawali.atlassian.net'}
+    JIRA_EMAIL: ${env:JIRA_EMAIL, ssm:/workbridge/${sls:stage}/jira-email}
+    JIRA_API_TOKEN: ${env:JIRA_API_TOKEN, ssm:/workbridge/${sls:stage}/jira-api-token}
 
 layers:
   requestsDependency:
@@ -85,9 +82,9 @@ layers:
       - arm64
 
 functions:
-  hello:
-    handler: handler.hello
-    layers:
+  health:
+    handler: src/api/health.handler
+    layers: &commonLayers
       - !Ref RequestsDependencyLambdaLayer
       - !Ref PydanticDependencyLambdaLayer
       - !Ref CertifiDependencyLambdaLayer
@@ -95,7 +92,31 @@ functions:
       - !Ref PythonDotenvDependencyLambdaLayer
     events:
       - httpApi:
-          path: /
+          path: /health
+          method: get
+
+  listProjects:
+    handler: src/api/list_projects.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /jira/projects
+          method: get
+
+  listIssues:
+    handler: src/api/list_issues.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /jira/projects/{projectKey}/issues
+          method: get
+
+  getIssue:
+    handler: src/api/get_issue.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /jira/issues/{issueKey}
           method: get
 
 custom:
