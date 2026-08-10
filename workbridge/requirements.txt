@@ -1,0 +1,7 @@
+requests==2.32.3
+pydantic==2.11.7
+certifi
+boto3
+botocore
+slack-sdk==3.35.0
+python-dotenv==1.1.1

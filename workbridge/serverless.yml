@@ -1,0 +1,107 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: skillrank1
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: workbridge
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: workbridge
+
+provider:
+  name: aws
+  runtime: python3.14
+  region: eu-west-2
+  architecture: arm64
+  stage: ${opt:stage, 'dev'}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - http://localhost:3000
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Api-Key
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+      maxAge: 86400
+  environment:
+    STAGE: ${sls:stage}
+    # Set these in SSM or override per stage later:
+    # MONDAY_API_TOKEN: ${ssm:/workbridge/${sls:stage}/monday-api-token, ''}
+    # JIRA_BASE_URL: ${ssm:/workbridge/${sls:stage}/jira-base-url, ''}
+    # JIRA_EMAIL: ${ssm:/workbridge/${sls:stage}/jira-email, ''}
+    # JIRA_API_TOKEN: ${ssm:/workbridge/${sls:stage}/jira-api-token, ''}
+    # SLACK_BOT_TOKEN: ${ssm:/workbridge/${sls:stage}/slack-bot-token, ''}
+    # SLACK_SIGNING_SECRET: ${ssm:/workbridge/${sls:stage}/slack-signing-secret, ''}
+    # SLACK_DEFAULT_CHANNEL: ${ssm:/workbridge/${sls:stage}/slack-default-channel, ''}
+
+layers:
+  requestsDependency:
+    path: layers/requestsDependency
+    name: ${self:service}-${sls:stage}-requests
+    description: Dependencies for requests
+    compatibleRuntimes:
+      - python3.14
+    compatibleArchitectures:
+      - arm64
+
+  pydanticDependency:
+    path: layers/pydanticDependency
+    name: ${self:service}-${sls:stage}-pydantic
+    description: Dependencies for pydantic
+    compatibleRuntimes:
+      - python3.14
+    compatibleArchitectures:
+      - arm64
+
+  certifiDependency:
+    path: layers/certifiDependency
+    name: ${self:service}-${sls:stage}-certifi
+    description: Dependencies for certifi
+    compatibleRuntimes:
+      - python3.14
+    compatibleArchitectures:
+      - arm64
+
+  slackSdkDependency:
+    path: layers/slackSdkDependency
+    name: ${self:service}-${sls:stage}-slack-sdk
+    description: Dependencies for slack-sdk
+    compatibleRuntimes:
+      - python3.14
+    compatibleArchitectures:
+      - arm64
+
+  pythonDotenvDependency:
+    path: layers/pythonDotenvDependency
+    name: ${self:service}-${sls:stage}-python-dotenv
+    description: Dependencies for python-dotenv
+    compatibleRuntimes:
+      - python3.14
+    compatibleArchitectures:
+      - arm64
+
+functions:
+  hello:
+    handler: handler.hello
+    layers:
+      - !Ref RequestsDependencyLambdaLayer
+      - !Ref PydanticDependencyLambdaLayer
+      - !Ref CertifiDependencyLambdaLayer
+      - !Ref SlackSdkDependencyLambdaLayer
+      - !Ref PythonDotenvDependencyLambdaLayer
+    events:
+      - httpApi:
+          path: /
+          method: get
+
+custom:
+  scripts:
+    hooks:
+      before:package:initialize: chmod +x ./installLayers.sh && ./installLayers.sh
+
+plugins:
+  - serverless-offline

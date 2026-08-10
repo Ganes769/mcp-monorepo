@@ -1,0 +1,39 @@
+{
+  "name": "workbridge",
+  "version": "1.0.0",
+  "description": "WorkBridge — MCP + Slack ops for monday.com and Jira",
+  "private": true,
+  "scripts": {
+    "chmod": "chmod +x ./installLayers.sh",
+    "postinstall": "npm run chmod",
+    "layers": "npm run chmod && ./installLayers.sh",
+    "layers:clean": "rm -rf layers/**/python",
+    "predeploy": "npm run chmod",
+    "deploy": "serverless deploy",
+    "deploy:dev": "npm run chmod && serverless deploy --stage dev",
+    "deploy:test": "npm run chmod && serverless deploy --stage test",
+    "deploy:prod": "npm run chmod && serverless deploy --stage prod",
+    "remove:dev": "serverless remove --stage dev",
+    "remove:test": "serverless remove --stage test",
+    "remove:prod": "serverless remove --stage prod",
+    "info:dev": "serverless info --stage dev",
+    "info:test": "serverless info --stage test",
+    "info:prod": "serverless info --stage prod",
+    "invoke:hello": "serverless invoke -f hello --stage dev",
+    "offline": "serverless offline --stage dev"
+  },
+  "keywords": [
+    "serverless",
+    "aws",
+    "lambda",
+    "mcp",
+    "slack",
+    "monday",
+    "jira"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^4.17.1",
+    "serverless-offline": "^14.4.0"
+  }
+}
