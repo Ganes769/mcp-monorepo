@@ -38,7 +38,7 @@ export default function SignUpForm() {
       const result = await signUp(email, password, name);
       
       if (result.success) {
-        navigate('/issues'); // Redirect to issues page after successful sign up
+        navigate('/'); // Dashboard after sign up
       } else {
         setError(result.error || 'Sign up failed');
       }

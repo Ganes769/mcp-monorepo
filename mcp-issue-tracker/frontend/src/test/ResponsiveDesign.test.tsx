@@ -91,7 +91,7 @@ describe("Responsive Design Tests", () => {
 
       const priorityBadge = screen.getByText("High");
       expect(priorityBadge).toBeInTheDocument();
-      expect(priorityBadge).toHaveClass("text-orange-700", "bg-orange-100");
+      expect(priorityBadge).toHaveClass("text-orange-700", "bg-orange-50");
     });
 
     it("should handle missing assigned user", () => {

@@ -23,7 +23,7 @@ export default function SignInForm() {
       const result = await signIn(email, password);
       
       if (result.success) {
-        navigate('/issues'); // Redirect to issues page after successful sign in
+        navigate('/'); // Dashboard after sign in
       } else {
         setError(result.error || 'Sign in failed');
       }

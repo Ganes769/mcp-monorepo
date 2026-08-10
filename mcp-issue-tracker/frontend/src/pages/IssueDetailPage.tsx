@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState } from "@/components/ui/loading";
 import { StatusBadge, TagBadge, UserAvatar } from "@/components/common";
 import { issuesApi } from "@/lib/api";
 import type { Issue } from "@/types";
@@ -91,10 +92,8 @@ export default function IssueDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center">
-          <div className="text-lg">Loading issue...</div>
-        </div>
+      <div className="mx-auto max-w-3xl">
+        <LoadingState message="Loading issue..." />
       </div>
     );
   }
@@ -122,7 +121,7 @@ export default function IssueDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
