@@ -34,6 +34,8 @@ provider:
     JIRA_BASE_URL: ${env:JIRA_BASE_URL, 'https://ganeshsnawali.atlassian.net'}
     JIRA_EMAIL: ${env:JIRA_EMAIL, ssm:/workbridge/${sls:stage}/jira-email}
     JIRA_API_TOKEN: ${env:JIRA_API_TOKEN, ssm:/workbridge/${sls:stage}/jira-api-token}
+    SLACK_BOT_TOKEN: ${env:SLACK_BOT_TOKEN, ssm:/workbridge/${sls:stage}/slack-bot-token}
+    SLACK_CHANNEL_ID: ${env:SLACK_CHANNEL_ID, ssm:/workbridge/${sls:stage}/slack-channel-id}
 
 layers:
   requestsDependency:
@@ -118,6 +120,22 @@ functions:
       - httpApi:
           path: /jira/issues/{issueKey}
           method: get
+
+  standup:
+    handler: src/api/standup.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /jira/projects/{projectKey}/standup
+          method: get
+
+  postStandup:
+    handler: src/api/post_standup.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /jira/projects/{projectKey}/standup
+          method: post
 
 custom:
   scripts:
