@@ -136,6 +136,16 @@ functions:
       - httpApi:
           path: /jira/projects/{projectKey}/standup
           method: post
+      - schedule:
+          method: scheduler
+          name: workbridge-${sls:stage}-daily-standup
+          description: Post Jira standup to Slack weekdays at 17:55 London
+          rate: cron(55 17 ? * MON-FRI *)
+          timezone: Europe/London
+          enabled: true
+          input:
+            pathParameters:
+              projectKey: KAN
 
 custom:
   scripts:
