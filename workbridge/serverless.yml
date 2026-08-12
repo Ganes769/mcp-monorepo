@@ -17,10 +17,17 @@ provider:
     cors:
       allowedOrigins:
         - http://localhost:3000
+        - http://localhost:5173
+        - http://127.0.0.1:5173
+        - http://localhost:5174
+        - http://127.0.0.1:5174
       allowedHeaders:
         - Content-Type
         - Authorization
         - X-Api-Key
+        - X-Jira-Email
+        - X-Jira-Api-Token
+        - X-Jira-Base-Url
       allowedMethods:
         - GET
         - POST
@@ -139,8 +146,8 @@ functions:
       - schedule:
           method: scheduler
           name: workbridge-${sls:stage}-daily-standup
-          description: Post Jira standup to Slack weekdays at 17:55 London
-          rate: cron(55 17 ? * MON-FRI *)
+          description: Post Jira standup to Slack weekdays at 09:00 London
+          rate: cron(0 9 ? * MON-FRI *)
           timezone: Europe/London
           enabled: true
           input:

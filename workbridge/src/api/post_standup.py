@@ -4,8 +4,9 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+from src.api._jira_auth import credentials_from_event
 from src.api.standup import FIELDS, _bucket, _build_text
-from src.clients.jira import search_issues
+from src.clients.jira import resolve_base_url, search_issues
 
 
 def _parse_body(event) -> dict:
@@ -42,6 +43,8 @@ def handler(event, context):
             or os.environ.get("SLACK_CHANNEL_ID")
         )
         token = os.environ.get("SLACK_BOT_TOKEN")
+        creds = credentials_from_event(event)
+        site = resolve_base_url(creds["base_url"])
 
         if not token:
             raise RuntimeError("SLACK_BOT_TOKEN must be set")
@@ -50,7 +53,14 @@ def handler(event, context):
                 "channel is required (body/query) or set SLACK_CHANNEL_ID"
             )
 
-        data = search_issues(jql=jql, fields=FIELDS, max_results=max_results)
+        data = search_issues(
+            jql=jql,
+            fields=FIELDS,
+            max_results=max_results,
+            email=creds["email"],
+            token=creds["token"],
+            base_url=creds["base_url"],
+        )
 
         groups = {"todo": [], "in_progress": [], "done": [], "blocked": []}
         for issue in data.get("issues") or []:
@@ -61,7 +71,7 @@ def handler(event, context):
                 "summary": fields.get("summary"),
                 "status": status,
                 "assignee": (fields.get("assignee") or {}).get("displayName"),
-                "url": f"https://ganeshsnawali.atlassian.net/browse/{issue.get('key')}",
+                "url": f"{site}/browse/{issue.get('key')}",
             }
             groups[_bucket(status, fields.get("labels") or [])].append(item)
 

@@ -1,6 +1,7 @@
 import json
 
-from src.clients.jira import jira_get
+from src.api._jira_auth import credentials_from_event
+from src.clients.jira import jira_get, resolve_base_url
 
 
 def handler(event, context):
@@ -13,11 +14,16 @@ def handler(event, context):
                 "body": json.dumps({"error": "issueKey is required"}),
             }
 
+        creds = credentials_from_event(event)
+        site = resolve_base_url(creds["base_url"])
         issue = jira_get(
             f"/rest/api/3/issue/{issue_key}",
             params={
                 "fields": "summary,status,assignee,priority,issuetype,updated,created,description",
             },
+            email=creds["email"],
+            token=creds["token"],
+            base_url=creds["base_url"],
         )
         fields = issue.get("fields") or {}
         key = issue.get("key")
@@ -36,7 +42,7 @@ def handler(event, context):
                         "issuetype": (fields.get("issuetype") or {}).get("name"),
                         "updated": fields.get("updated"),
                         "created": fields.get("created"),
-                        "url": f"https://ganeshsnawali.atlassian.net/browse/{key}",
+                        "url": f"{site}/browse/{key}",
                         "description": fields.get("description"),
                     }
                 }

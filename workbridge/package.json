@@ -20,7 +20,10 @@
     "info:test": "serverless info --stage test",
     "info:prod": "serverless info --stage prod",
     "invoke:hello": "serverless invoke -f hello --stage dev",
-    "offline": "serverless offline --stage dev"
+    "offline": "serverless offline --stage dev",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "dashboard": "npx --yes serve dashboard -l 5174"
   },
   "keywords": [
     "serverless",

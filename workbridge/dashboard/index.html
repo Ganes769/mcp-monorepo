@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WorkBridge Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/app.css" />
+  </head>
+  <body>
+    <div class="app-frame">
+      <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-brand">
+          <span class="brand-icon"><i class="bi bi-layers-half"></i></span>
+          <div>
+            <strong>WorkBridge</strong>
+            <small>Ops Console</small>
+          </div>
+        </div>
+
+        <div class="sidebar-section">Menu</div>
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-link active" data-page="standup">
+            <i class="bi bi-sunrise"></i><span>Standup</span>
+          </a>
+          <a href="#" class="nav-link" data-page="projects">
+            <i class="bi bi-kanban"></i><span>Projects</span>
+          </a>
+          <a href="#" class="nav-link" data-page="issues">
+            <i class="bi bi-list-task"></i><span>Issues</span>
+          </a>
+          <a href="#" class="nav-link" data-page="settings">
+            <i class="bi bi-gear"></i><span>Settings</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="status-chip">
+            <span class="status-dot" id="apiDot"></span>
+            <span id="apiStatus">Checking API…</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="app-header">
+          <button class="btn btn-light btn-sm d-lg-none" id="sidebarToggle" type="button">
+            <i class="bi bi-list"></i>
+          </button>
+          <div class="header-title">
+            <h1 id="pageTitle">Standup</h1>
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">WorkBridge</li>
+              <li class="breadcrumb-item active" id="pageCrumb">Standup</li>
+            </ol>
+          </div>
+          <div class="header-actions">
+            <div class="input-group input-group-sm project-picker">
+              <span class="input-group-text">Project</span>
+              <input
+                type="text"
+                class="form-control"
+                id="projectKeyInput"
+                value="KAN"
+                maxlength="16"
+              />
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" id="btnRefreshHeader" type="button">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+        </header>
+
+        <main class="app-content">
+          <div id="alertHost"></div>
+
+          <!-- Standup -->
+          <section class="page-panel active" id="page-standup">
+            <div class="row g-3 mb-3" id="standupStats"></div>
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-xl-8">
+                <div class="card app-card h-100">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="mb-0">Board groups</h5>
+                      <small class="text-muted">Blocked · In progress · To do · Done</small>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" id="btnLoadStandup" type="button">
+                        Load standup
+                      </button>
+                      <button class="btn btn-primary" id="btnPostStandup" type="button">
+                        Post to Slack
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-3" id="standupGroups"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-xl-4">
+                <div class="card app-card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">Slack preview</h5>
+                  </div>
+                  <div class="card-body">
+                    <pre class="standup-preview mb-0" id="standupPreview">Load standup to preview the message.</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Projects -->
+          <section class="page-panel" id="page-projects">
+            <div class="card app-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="mb-0">Jira projects</h5>
+                  <small class="text-muted">Select a project to drive standup and issues</small>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" id="btnLoadProjects" type="button">
+                  Refresh
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="row g-3" id="projectsGrid"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Issues -->
+          <section class="page-panel" id="page-issues">
+            <div class="card app-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="mb-0">Issues</h5>
+                  <small class="text-muted" id="issuesSubtitle">Project KAN</small>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" id="btnLoadIssues" type="button">
+                  Refresh
+                </button>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0 app-table">
+                    <thead>
+                      <tr>
+                        <th>Key</th>
+                        <th>Summary</th>
+                        <th>Status</th>
+                        <th>Assignee</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody id="issuesBody">
+                      <tr>
+                        <td colspan="5" class="text-muted text-center py-4">
+                          Load issues to populate this table.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Settings -->
+          <section class="page-panel" id="page-settings">
+            <div class="row g-3">
+              <div class="col-12 col-lg-7">
+                <div class="card app-card">
+                  <div class="card-header">
+                    <h5 class="mb-0">Jira credentials</h5>
+                    <small class="text-muted"
+                      >Stored in browser localStorage and sent as request headers</small
+                    >
+                  </div>
+                  <div class="card-body">
+                    <form id="credentialsForm">
+                      <div class="mb-3">
+                        <label class="form-label" for="jiraEmail">Email</label>
+                        <input type="email" class="form-control" id="jiraEmail" autocomplete="username" />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label" for="jiraToken">API token</label>
+                        <input
+                          type="password"
+                          class="form-control"
+                          id="jiraToken"
+                          autocomplete="current-password"
+                        />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label" for="jiraBaseUrl">Base URL</label>
+                        <input type="url" class="form-control" id="jiraBaseUrl" />
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-outline-secondary" id="btnClearCreds" type="button">
+                          Clear
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-lg-5">
+                <div class="card app-card">
+                  <div class="card-header">
+                    <h5 class="mb-0">Connection</h5>
+                  </div>
+                  <div class="card-body">
+                    <p class="mb-2 text-muted">API base</p>
+                    <code id="apiBaseLabel" class="d-block mb-3"></code>
+                    <p class="small text-muted mb-0">
+                      Leave credentials empty to use the Lambda env fallback for scheduled
+                      standups. Header credentials override per request for multi-user access.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>

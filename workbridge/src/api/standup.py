@@ -1,6 +1,8 @@
 import json
+from datetime import datetime, timezone
 
-from src.clients.jira import search_issues
+from src.api._jira_auth import credentials_from_event
+from src.clients.jira import resolve_base_url, search_issues
 
 FIELDS = ["summary", "status", "assignee", "priority", "issuetype", "labels"]
 
@@ -15,9 +17,6 @@ def _bucket(status_name: str, labels: list) -> str:
     if status in {"done", "closed", "resolved", "complete"}:
         return "done"
     return "todo"
-
-
-from datetime import datetime, timezone
 
 
 def _format_line(item: dict) -> str:
@@ -67,8 +66,17 @@ def handler(event, context):
         project_key = (path_params.get("projectKey") or "KAN").upper()
         jql = query.get("jql") or f"project = {project_key} ORDER BY cf[10019] ASC"
         max_results = int(query.get("maxResults") or 50)
+        creds = credentials_from_event(event)
+        site = resolve_base_url(creds["base_url"])
 
-        data = search_issues(jql=jql, fields=FIELDS, max_results=max_results)
+        data = search_issues(
+            jql=jql,
+            fields=FIELDS,
+            max_results=max_results,
+            email=creds["email"],
+            token=creds["token"],
+            base_url=creds["base_url"],
+        )
 
         groups = {"todo": [], "in_progress": [], "done": [], "blocked": []}
         for issue in data.get("issues") or []:
@@ -79,7 +87,7 @@ def handler(event, context):
                 "summary": fields.get("summary"),
                 "status": status,
                 "assignee": (fields.get("assignee") or {}).get("displayName"),
-                "url": f"https://ganeshsnawali.atlassian.net/browse/{issue.get('key')}",
+                "url": f"{site}/browse/{issue.get('key')}",
             }
             groups[_bucket(status, fields.get("labels") or [])].append(item)
 

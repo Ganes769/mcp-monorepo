@@ -1,6 +1,7 @@
 import json
 
-from src.clients.jira import search_issues
+from src.api._jira_auth import credentials_from_event
+from src.clients.jira import resolve_base_url, search_issues
 
 FIELDS = [
     "summary",
@@ -20,8 +21,17 @@ def handler(event, context):
         project_key = (path_params.get("projectKey") or "KAN").upper()
         jql = query.get("jql") or f"project = {project_key} ORDER BY cf[10019] ASC"
         max_results = int(query.get("maxResults") or 50)
+        creds = credentials_from_event(event)
+        site = resolve_base_url(creds["base_url"])
 
-        data = search_issues(jql=jql, fields=FIELDS, max_results=max_results)
+        data = search_issues(
+            jql=jql,
+            fields=FIELDS,
+            max_results=max_results,
+            email=creds["email"],
+            token=creds["token"],
+            base_url=creds["base_url"],
+        )
 
         issues = []
         for issue in data.get("issues") or []:
@@ -42,7 +52,7 @@ def handler(event, context):
                     "issuetype": issuetype.get("name"),
                     "updated": fields.get("updated"),
                     "created": fields.get("created"),
-                    "url": f"https://ganeshsnawali.atlassian.net/browse/{key}",
+                    "url": f"{site}/browse/{key}",
                 }
             )
 
