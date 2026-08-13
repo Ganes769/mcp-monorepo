@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, type Issue, type Project, type StandupData } from './api/client'
+import { HomeView } from './components/HomeView'
 import { IssuesView } from './components/IssuesView'
-import { LiquidBackground } from './components/LiquidBackground'
 import { ProjectsView } from './components/ProjectsView'
 import { SettingsView } from './components/SettingsView'
 import { Sidebar } from './components/Sidebar'
 import { StandupView } from './components/StandupView'
 import { useCredentials } from './hooks/useCredentials'
-import './App.css'
+import { cx, theme } from './theme'
 
-type NavId = 'standup' | 'projects' | 'issues' | 'settings'
+type NavId = 'home' | 'standup' | 'projects' | 'issues' | 'settings'
 
 export default function App() {
   const { credentials, update, clear } = useCredentials()
-  const [nav, setNav] = useState<NavId>('standup')
+  const [nav, setNav] = useState<NavId>('home')
   const [projectKey, setProjectKey] = useState('KAN')
   const [healthy, setHealthy] = useState<boolean | null>(null)
 
@@ -105,21 +105,36 @@ export default function App() {
   }, [credentials, projectKey])
 
   useEffect(() => {
+    void loadProjects()
+  }, [loadProjects])
+
+  useEffect(() => {
     if (nav === 'standup') void loadStandup()
-    if (nav === 'projects') void loadProjects()
     if (nav === 'issues') void loadIssues()
-  }, [nav, loadStandup, loadProjects, loadIssues])
+  }, [nav, loadStandup, loadIssues])
+
+  const projectName =
+    projects.find((project) => project.key === projectKey)?.name || projectKey
+
+  if (nav === 'home') {
+    return (
+      <HomeView
+        onConnectOrg={() => setNav('settings')}
+        onOpenApp={() => setNav('standup')}
+      />
+    )
+  }
 
   return (
-    <div className="app-shell">
-      <LiquidBackground />
+    <div className={cx('flex min-h-screen', theme.classes.page)}>
       <Sidebar
         active={nav}
         onChange={setNav}
         projectKey={projectKey}
+        projectName={projectName}
         healthy={healthy}
       />
-      <main className="main">
+      <main className="min-w-0 flex-1">
         {nav === 'standup' && (
           <StandupView
             data={standup}
@@ -128,6 +143,7 @@ export default function App() {
             onRefresh={loadStandup}
             onPost={postStandup}
             posting={posting}
+            projectName={projectName}
           />
         )}
         {nav === 'projects' && (
@@ -146,6 +162,7 @@ export default function App() {
         {nav === 'issues' && (
           <IssuesView
             projectKey={projectKey}
+            projectName={projectName}
             issues={issues}
             total={issuesTotal}
             loading={issuesLoading}

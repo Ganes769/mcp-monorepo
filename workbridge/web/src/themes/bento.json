@@ -1,0 +1,85 @@
+{
+  "slug": "bento",
+  "name": "Bento",
+  "eyebrow": "Modular interface",
+  "description": "A structured dashboard experience built around clear hierarchy, modular cards and purposeful spacing.",
+  "layout": "bento",
+  "classes": {
+    "page": "bg-[#F8FAFC] text-[#0F172A]",
+    "decoration": "",
+    "hero": "border-b border-[#E2E8F0] bg-white px-8 py-5",
+    "panel": "border border-[#E2E8F0] bg-white",
+    "inset": "border-b border-[#F1F5F9] px-4 py-3 last:border-b-0",
+    "badge": "inline-flex items-center rounded-full bg-[#EFF6FF] px-2 py-0.5 text-[11px] font-medium text-[#1D4ED8]",
+    "heading": "font-semibold tracking-[-0.015em] text-[#0F172A]",
+    "body": "text-[14px] leading-6 text-[#475569]",
+    "muted": "text-[12px] leading-4 text-[#64748B]",
+    "metricValue": "font-semibold tabular-nums tracking-[-0.03em] text-[#0F172A]",
+    "primaryButton": "rounded-md bg-[#0F172A] text-white hover:bg-[#1E293B]",
+    "secondaryButton": "rounded-md border border-[#E2E8F0] bg-white text-[#334155] hover:bg-[#F8FAFC]",
+    "input": "rounded-md border border-[#E2E8F0] bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#2563EB] focus:outline-none",
+    "accent": "bg-[#2563EB]"
+  },
+  "designProfile": {
+    "about": "Bento design organises information into modular cards of different sizes. Each card represents a focused task, metric, feature, or content group, allowing users to scan a large amount of information without facing one continuous page.",
+    "suitedFor": [
+      "Analytics dashboards",
+      "SaaS product homepages",
+      "Project management tools",
+      "Admin platforms",
+      "Productivity applications"
+    ],
+    "bestChoiceWhen": "Choose Bento when the interface contains several independent pieces of information that must remain visible, scannable, and easy to prioritise.",
+    "designPerspective": "From a UI and UX perspective, Bento works well because it creates hierarchy through card size, position, spacing, and contrast. Larger cards communicate greater importance, while smaller cards support secondary actions and contextual information.",
+    "useCases": [
+      "A revenue dashboard showing sales, conversion, customers, and recent activity",
+      "A project workspace containing tasks, deadlines, team activity, and progress",
+      "A cloud platform overview displaying service health and resource usage",
+      "A personal productivity dashboard combining notes, calendar, and goals"
+    ],
+    "interactionModel": "Interactions should remain contained within each card. Cards may expand, reveal more detail, support filtering, or provide a clear primary action. Avoid making every card highly interactive, as this can reduce hierarchy and increase cognitive load.",
+    "implementationNotes": "Use CSS Grid for the main layout and define predictable column spans for important cards. Components should remain reusable, responsive, and content-aware. On smaller screens, the grid should collapse into a clear single-column sequence.",
+    "effort": {
+      "level": "Medium",
+      "explanation": "The visual styling is straightforward, but creating a balanced grid, responsive card spans, and meaningful hierarchy requires thoughtful layout planning."
+    },
+    "considerations": [
+      "Do not use card size only for decoration; size should communicate importance",
+      "Avoid excessive nesting of cards inside cards",
+      "Maintain a logical mobile reading order",
+      "Keep spacing and alignment consistent across modules"
+    ],
+    "palette": [
+      {
+        "name": "Canvas",
+        "value": "#F3F4F6",
+        "role": "Main application background"
+      },
+      {
+        "name": "Surface",
+        "value": "#FFFFFF",
+        "role": "Cards, panels and elevated content"
+      },
+      {
+        "name": "Primary text",
+        "value": "#020617",
+        "role": "Headings, important values and primary actions"
+      },
+      {
+        "name": "Accent blue",
+        "value": "#2563EB",
+        "role": "Navigation, active states and highlighted actions"
+      },
+      {
+        "name": "Muted text",
+        "value": "#64748B",
+        "role": "Supporting copy and secondary information"
+      },
+      {
+        "name": "Border",
+        "value": "#E2E8F0",
+        "role": "Card boundaries and visual grouping"
+      }
+    ]
+  }
+}
