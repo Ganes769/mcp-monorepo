@@ -56,21 +56,14 @@
           </button>
           <div class="header-title">
             <h1 id="pageTitle">Standup</h1>
-            <ol class="breadcrumb mb-0">
-              <li class="breadcrumb-item">WorkBridge</li>
-              <li class="breadcrumb-item active" id="pageCrumb">Standup</li>
-            </ol>
+            <div class="text-muted" style="font-size: 0.7rem" id="pageCrumb">WorkBridge / Standup >> KAN</div>
           </div>
           <div class="header-actions">
             <div class="input-group input-group-sm project-picker">
               <span class="input-group-text">Project</span>
-              <input
-                type="text"
-                class="form-control"
-                id="projectKeyInput"
-                value="KAN"
-                maxlength="16"
-              />
+              <select class="form-select" id="projectKeyInput">
+                <option value="KAN">KAN</option>
+              </select>
             </div>
             <button class="btn btn-outline-secondary btn-sm" id="btnRefreshHeader" type="button">
               <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -83,6 +76,19 @@
 
           <!-- Standup -->
           <section class="page-panel active" id="page-standup">
+            <div class="card app-card mb-3" id="cfoScheduleCard">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="fw-semibold" style="font-size: 0.82rem">CFO ops view — delivery schedule</div>
+                    <div class="text-muted" id="cfoScheduleText" style="font-size: 0.75rem">
+                      Loading schedule…
+                    </div>
+                  </div>
+                  <span class="badge text-bg-light border" id="cfoScheduleBadge">09:00 auto-send</span>
+                </div>
+              </div>
+            </div>
             <div class="row g-3 mb-3" id="standupStats"></div>
             <div class="row g-3 mb-3">
               <div class="col-12 col-xl-8">
@@ -102,6 +108,9 @@
                     </div>
                   </div>
                   <div class="card-body">
+                    <p class="text-muted mb-2" id="standupProjectHint" style="font-size: 0.75rem">
+                      Slack posts use the project selected in the header.
+                    </p>
                     <div class="row g-3" id="standupGroups"></div>
                   </div>
                 </div>

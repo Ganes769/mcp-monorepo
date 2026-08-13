@@ -9,9 +9,119 @@
     issues: 'Issues',
     settings: 'Settings',
   };
+  let projectNames = {};
+
+  const PROJECT_STORAGE_KEY = 'workbridge.dashboard.projectKey';
 
   function projectKey() {
     return ($('#projectKeyInput').val() || config.defaultProjectKey).toString().trim().toUpperCase();
+  }
+
+  function projectLabel() {
+    const key = projectKey();
+    const name = projectNames[key];
+    return name ? key + ' — ' + name : key;
+  }
+
+  function updatePageHeading(page) {
+    const currentPage = page || $('.sidebar-nav .nav-link.active').data('page') || 'standup';
+    const title = pageTitles[currentPage] || currentPage;
+    $('#pageTitle').text(title);
+    $('#pageCrumb').text('WorkBridge / ' + title + ' >> ' + projectLabel());
+  }
+
+  function saveProjectKey(key) {
+    localStorage.setItem(PROJECT_STORAGE_KEY, key);
+  }
+
+  function loadSavedProjectKey() {
+    return localStorage.getItem(PROJECT_STORAGE_KEY) || config.defaultProjectKey;
+  }
+
+  function updateScheduleCard() {
+    const schedule = config.schedule || {};
+    const scheduledProject = schedule.projectKey || config.defaultProjectKey;
+    const selected = projectLabel();
+    $('#cfoScheduleBadge').text((schedule.time || '09:00') + ' auto-send');
+    $('#cfoScheduleText').html(
+      'Automated standup runs <strong>' +
+        (schedule.days || 'Mon–Fri') +
+        ' at ' +
+        (schedule.time || '09:00') +
+        ' ' +
+        (schedule.timezone || 'Europe/London') +
+        '</strong> and <strong>will send a Slack message</strong> for project <strong>' +
+        scheduledProject +
+        '</strong> (' +
+        (schedule.channelNote || 'configured Slack channel') +
+        '). ' +
+        'Manual “Post to Slack” uses your selected project: <strong>' +
+        $('<div>').text(selected).html() +
+        '</strong>.',
+    );
+  }
+
+  function updatePostButtonLabel() {
+    const key = projectKey();
+    $('#btnPostStandup').text('Post ' + key + ' to Slack');
+    $('#standupProjectHint').text(
+      'Manual Slack post uses ' +
+        projectLabel() +
+        '. Automated 9:00am send still posts scheduled project ' +
+        ((config.schedule && config.schedule.projectKey) || config.defaultProjectKey) +
+        '.',
+    );
+    updatePageHeading();
+    updateScheduleCard();
+  }
+
+  function fillProjectSelect(projects, preferredKey) {
+    const $select = $('#projectKeyInput');
+    const current = (preferredKey || projectKey() || config.defaultProjectKey).toUpperCase();
+    projectNames = {};
+    if (!projects || !projects.length) {
+      $select.html('<option value="' + current + '">' + current + '</option>');
+      $select.val(current);
+      updatePostButtonLabel();
+      return;
+    }
+    projects.forEach(function (project) {
+      if (project.key) projectNames[project.key] = project.name || project.key;
+    });
+    $select.html(
+      projects
+        .map(function (project) {
+          const label = project.key + ' — ' + (project.name || project.key);
+          return (
+            '<option value="' +
+            $('<div>').text(project.key).html() +
+            '">' +
+            $('<div>').text(label).html() +
+            '</option>'
+          );
+        })
+        .join(''),
+    );
+    const keys = projects.map(function (p) {
+      return p.key;
+    });
+    const selected = keys.indexOf(current) >= 0 ? current : keys[0];
+    $select.val(selected);
+    saveProjectKey(selected);
+    updatePostButtonLabel();
+  }
+
+  function refreshProjectOptions(done) {
+    api
+      .listProjects()
+      .done(function (projects) {
+        fillProjectSelect(projects, loadSavedProjectKey());
+        if (typeof done === 'function') done(projects);
+      })
+      .fail(function () {
+        fillProjectSelect([], loadSavedProjectKey());
+        if (typeof done === 'function') done([]);
+      });
   }
 
   function showAlert(message, type) {
@@ -34,8 +144,7 @@
     $('.sidebar-nav .nav-link[data-page="' + page + '"]').addClass('active');
     $('.page-panel').removeClass('active');
     $('#page-' + page).addClass('active');
-    $('#pageTitle').text(pageTitles[page] || page);
-    $('#pageCrumb').text(pageTitles[page] || page);
+    updatePageHeading(page);
     closeSidebar();
 
     if (page === 'standup') loadStandup();
@@ -150,13 +259,29 @@
   function postStandup() {
     clearAlert();
     const key = projectKey();
-    $('#btnPostStandup').prop('disabled', true).text('Posting…');
+    if (!key) {
+      showAlert('Select a project before posting to Slack.');
+      return;
+    }
+    const confirmed = window.confirm(
+      'Post standup for project ' + key + ' to Slack?',
+    );
+    if (!confirmed) return;
+
+    $('#btnPostStandup').prop('disabled', true).text('Posting ' + key + '…');
     api
       .postStandup(key)
       .done(function (data) {
         renderStats(data.counts);
         $('#standupPreview').text(data.text || '');
-        showAlert('Standup posted to Slack (' + (data.channel || 'channel') + ').', 'success');
+        showAlert(
+          'Posted project ' +
+            (data.projectKey || key) +
+            ' to Slack (' +
+            (data.channel || 'channel') +
+            ').',
+          'success',
+        );
       })
       .fail(function (xhr) {
         const msg =
@@ -166,7 +291,8 @@
         showAlert(msg);
       })
       .always(function () {
-        $('#btnPostStandup').prop('disabled', false).text('Post to Slack');
+        $('#btnPostStandup').prop('disabled', false);
+        updatePostButtonLabel();
       });
   }
 
@@ -184,6 +310,7 @@
           );
           return;
         }
+        fillProjectSelect(projects, projectKey());
         const current = projectKey();
         $('#projectsGrid').html(
           projects
@@ -308,10 +435,14 @@
   }
 
   $(function () {
-    $('#projectKeyInput').val(config.defaultProjectKey);
     fillSettingsForm();
     checkHealth();
-    setPage('standup');
+    updatePostButtonLabel();
+    updateScheduleCard();
+
+    refreshProjectOptions(function () {
+      setPage('standup');
+    });
 
     $('.sidebar-nav').on('click', '.nav-link', function (e) {
       e.preventDefault();
@@ -329,8 +460,10 @@
     $('#btnLoadIssues').on('click', loadIssues);
 
     $('#projectsGrid').on('click', '.project-tile', function () {
-      const key = $(this).data('key');
+      const key = String($(this).data('key') || '').toUpperCase();
       $('#projectKeyInput').val(key);
+      saveProjectKey(key);
+      updatePostButtonLabel();
       setPage('standup');
     });
 
@@ -342,6 +475,7 @@
         baseUrl: $('#jiraBaseUrl').val().trim() || config.defaultBaseUrl,
       });
       showAlert('Credentials saved in this browser.', 'success');
+      refreshProjectOptions();
     });
 
     $('#btnClearCreds').on('click', function () {
@@ -351,7 +485,12 @@
     });
 
     $('#projectKeyInput').on('change', function () {
-      $(this).val(projectKey());
+      const key = projectKey();
+      saveProjectKey(key);
+      updatePostButtonLabel();
+      const page = $('.sidebar-nav .nav-link.active').data('page') || 'standup';
+      if (page === 'standup') loadStandup();
+      if (page === 'issues') loadIssues();
     });
   });
 })(window, jQuery);
