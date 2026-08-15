@@ -10,6 +10,7 @@ type Props = {
   onPost: () => void
   posting: boolean
   projectName: string
+  slackConnected?: boolean
 }
 
 const sections: { key: keyof StandupData['counts']; title: string }[] = [
@@ -27,6 +28,7 @@ export function StandupView({
   onPost,
   posting,
   projectName,
+  slackConnected = true,
 }: Props) {
   const { classes } = theme
 
@@ -34,20 +36,20 @@ export function StandupView({
     <div>
       <header className={cx(classes.hero, 'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between')}>
         <PageTitle section="Standup" projectName={projectName} />
-        <div className="flex gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <button
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className={cx('px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.secondaryButton)}
+            className={cx('cursor-pointer px-4 py-2 text-[13px] font-semibold disabled:opacity-50', classes.secondaryButton)}
           >
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
           <button
             type="button"
             onClick={onPost}
-            disabled={posting || loading}
-            className={cx('px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.primaryButton)}
+            disabled={posting || loading || !slackConnected}
+            className={cx('cursor-pointer px-4 py-2 text-[13px] font-semibold disabled:opacity-50', classes.primaryButton)}
           >
             {posting ? 'Posting…' : 'Post to Slack'}
           </button>
@@ -119,8 +121,16 @@ export function StandupView({
 
         {data?.text && (
           <section className={cx(classes.panel, 'overflow-hidden rounded-lg')}>
-            <div className="border-b border-[#E2E8F0] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E2E8F0] px-4 py-3">
               <h2 className={cx('text-[13px]', classes.heading)}>Slack preview</h2>
+              <button
+                type="button"
+                onClick={onPost}
+                disabled={posting || loading || !slackConnected}
+                className={cx('cursor-pointer px-4 py-2 text-[13px] font-semibold disabled:opacity-50', classes.primaryButton)}
+              >
+                {posting ? 'Posting…' : slackConnected ? 'Post to Slack' : 'Connect Slack to post'}
+              </button>
             </div>
             <pre className="overflow-auto px-4 py-4 text-[12px] leading-6 text-[#334155]">
               {data.text}

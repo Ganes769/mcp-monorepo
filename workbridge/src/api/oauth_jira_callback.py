@@ -1,6 +1,6 @@
 import os
 import time
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import requests
 
@@ -10,10 +10,30 @@ TOKEN_URL = "https://auth.atlassian.com/oauth/token"
 RESOURCES_URL = "https://api.atlassian.com/oauth/token/accessible-resources"
 
 
-def _api_base(event) -> str:
+def _normalize_redirect_base(configured: str, callback_path: str = "") -> str:
+    value = (configured or "").strip()
+    if not value:
+        return ""
+
+    parsed = urlsplit(value)
+    if parsed.scheme and parsed.netloc:
+        base = f"{parsed.scheme}://{parsed.netloc}"
+        callback = (callback_path or "").rstrip("/")
+        if callback and parsed.path.rstrip("/") == callback:
+            return base
+        return base
+
+    if callback_path:
+        callback = callback_path.rstrip("/")
+        if value.rstrip("/").endswith(callback):
+            return value[: -len(callback)].rstrip("/")
+    return value.rstrip("/")
+
+
+def _api_base(event, callback_path: str = "") -> str:
     configured = os.environ.get("OAUTH_REDIRECT_BASE")
     if configured:
-        return configured.rstrip("/")
+        return _normalize_redirect_base(configured, callback_path)
     headers = event.get("headers") or {}
     host = headers.get("host") or headers.get("Host")
     return f"https://{host}"
@@ -38,7 +58,7 @@ def handler(event, context):
 
     client_id = os.environ.get("JIRA_OAUTH_CLIENT_ID")
     client_secret = os.environ.get("JIRA_OAUTH_CLIENT_SECRET")
-    redirect_uri = f"{_api_base(event)}/oauth/jira/callback"
+    redirect_uri = f"{_api_base(event, '/oauth/jira/callback')}/oauth/jira/callback"
     token_response = requests.post(
         TOKEN_URL,
         json={

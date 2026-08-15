@@ -1,4 +1,4 @@
-"""DynamoDB store for Jira OAuth tokens and CSRF state."""
+"""DynamoDB store for Jira/Slack OAuth tokens and CSRF state."""
 
 from __future__ import annotations
 
@@ -40,10 +40,17 @@ def put_workspace(fields: dict[str, Any]) -> dict[str, Any]:
     return current
 
 
+def replace_workspace(item: dict[str, Any]) -> dict[str, Any]:
+    cleaned = {key: value for key, value in item.items() if value is not None}
+    cleaned["pk"] = WORKSPACE_PK
+    cleaned["updated_at"] = int(time.time())
+    serialized = {key: serializer.serialize(value) for key, value in cleaned.items()}
+    _table().put_item(TableName=TABLE, Item=serialized)
+    return cleaned
+
+
 def clear_jira() -> None:
-    current = get_workspace()
-    if not current:
-        return
+    current = get_workspace() or {"pk": WORKSPACE_PK}
     for key in (
         "jira_access_token",
         "jira_refresh_token",
@@ -53,7 +60,19 @@ def clear_jira() -> None:
         "jira_expires_at",
     ):
         current.pop(key, None)
-    put_workspace(current)
+    replace_workspace(current)
+
+
+def clear_slack() -> None:
+    current = get_workspace() or {"pk": WORKSPACE_PK}
+    for key in (
+        "slack_bot_token",
+        "slack_team_id",
+        "slack_team_name",
+        "slack_channel_id",
+    ):
+        current.pop(key, None)
+    replace_workspace(current)
 
 
 def put_oauth_state(state: str) -> None:

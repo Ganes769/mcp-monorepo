@@ -38,6 +38,13 @@ export type JiraConnection = {
   siteName?: string
 }
 
+export type SlackConnection = {
+  connected: boolean
+  teamName?: string
+  channelId?: string
+  redirectUri?: string
+}
+
 export const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'https://jpoe7wlfq7.execute-api.eu-west-2.amazonaws.com'
@@ -62,9 +69,14 @@ export const api = {
     const response = await fetch(`${API_BASE}/health`)
     return response.json()
   },
-  oauthStatus: () => request<{ jira: JiraConnection }>('/oauth/status'),
-  oauthDisconnect: () => request<{ disconnected: string }>('/oauth/disconnect', { method: 'POST' }),
+  oauthStatus: () => request<{ jira: JiraConnection; slack: SlackConnection }>('/oauth/status'),
+  oauthDisconnect: (provider: 'jira' | 'slack' = 'jira') =>
+    request<{ disconnected: string }>('/oauth/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({ provider }),
+    }),
   jiraConnectUrl: () => `${API_BASE}/oauth/jira/start`,
+  slackConnectUrl: () => `${API_BASE}/oauth/slack/start`,
   listProjects: () => request<Project[]>('/jira/projects'),
   listIssues: (projectKey: string) =>
     request<{ projectKey: string; issues: Issue[]; total: number }>(

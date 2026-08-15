@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  API_BASE,
   api,
   type Issue,
   type JiraConnection,
   type Project,
+  type SlackConnection,
   type StandupData,
 } from "./api/client";
 import { HomeView } from "./components/HomeView";
@@ -22,6 +24,8 @@ export default function App() {
   const [nav, setNav] = useState<NavId>("home");
   const [healthy, setHealthy] = useState<boolean | null>(null);
   const [jira, setJira] = useState<JiraConnection>({ connected: false });
+  const [slack, setSlack] = useState<SlackConnection>({ connected: false });
+  const [slackError, setSlackError] = useState<string | null>(null);
 
   const [standup, setStandup] = useState<StandupData | null>(null);
   const [standupLoading, setStandupLoading] = useState(false);
@@ -41,12 +45,19 @@ export default function App() {
     try {
       const data = await api.oauthStatus();
       setJira(data.jira);
+      setSlack(data.slack || { connected: false });
     } catch {
       setJira({ connected: false });
+      setSlack({ connected: false });
     }
   }, []);
 
   useEffect(() => {
+    if (window.location.pathname === "/oauth/slack/callback") {
+      window.location.replace(`${API_BASE}/oauth/slack/callback${window.location.search}`);
+      return;
+    }
+
     api
       .health()
       .then(() => setHealthy(true))
@@ -54,8 +65,13 @@ export default function App() {
     void loadConnection();
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get("jira") === "connected") {
+    if (params.get("jira") === "connected" || params.get("slack") === "connected") {
       setNav("settings");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    if (params.get("slack") === "error") {
+      setNav("settings");
+      setSlackError(params.get("reason") || "Slack connection failed");
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [loadConnection]);
@@ -160,6 +176,38 @@ export default function App() {
 
   const projectName =
     projects.find((project) => project.key === projectKey)?.name || projectKey;
+  const orgReady = jira.connected && slack.connected;
+
+  if (!orgReady) {
+    if (nav === "settings") {
+      return (
+        <SettingsView
+          jira={jira}
+          slack={slack}
+          slackError={slackError}
+          onJiraDisconnected={() => {
+            setJira({ connected: false });
+            setProjectKey("");
+            setProjects([]);
+            setNav("settings");
+          }}
+          onSlackDisconnected={() => {
+            setSlack({ connected: false });
+            setNav("settings");
+          }}
+          onOpenApp={() => setNav("standup")}
+          onBackHome={() => setNav("home")}
+        />
+      );
+    }
+
+    return (
+      <HomeView
+        onConnectOrg={() => setNav("settings")}
+        onOpenApp={() => setNav("settings")}
+      />
+    );
+  }
 
   return (
     <div className={cx("flex min-h-screen flex-col md:flex-row", theme.classes.page)}>
@@ -174,7 +222,7 @@ export default function App() {
         {nav === "home" && (
           <HomeView
             onConnectOrg={() => setNav("settings")}
-            onOpenApp={() => setNav(jira.connected ? "standup" : "settings")}
+            onOpenApp={() => setNav("standup")}
           />
         )}
         {nav === "standup" && (
@@ -186,6 +234,7 @@ export default function App() {
             onPost={postStandup}
             posting={posting}
             projectName={projectName}
+            slackConnected={slack.connected}
           />
         )}
         {nav === "projects" && (
@@ -215,11 +264,20 @@ export default function App() {
         {nav === "settings" && (
           <SettingsView
             jira={jira}
-            onDisconnected={() => {
+            slack={slack}
+            slackError={slackError}
+            onJiraDisconnected={() => {
               setJira({ connected: false });
               setProjectKey("");
               setProjects([]);
+              setNav("settings");
             }}
+            onSlackDisconnected={() => {
+              setSlack({ connected: false });
+              setNav("settings");
+            }}
+            onOpenApp={() => setNav("standup")}
+            onBackHome={() => setNav("home")}
           />
         )}
       </main>

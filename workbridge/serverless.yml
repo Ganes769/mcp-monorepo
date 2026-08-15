@@ -55,6 +55,9 @@ provider:
     OAUTH_REDIRECT_BASE: ${env:OAUTH_REDIRECT_BASE, ''}
     WEB_APP_URL: ${env:WEB_APP_URL, 'http://localhost:5173'}
     STANDUP_PROJECT_KEY: ${env:STANDUP_PROJECT_KEY, ''}
+    SLACK_OAUTH_CLIENT_ID: ${env:SLACK_OAUTH_CLIENT_ID, ''}
+    SLACK_OAUTH_CLIENT_SECRET: ${env:SLACK_OAUTH_CLIENT_SECRET, ''}
+    SLACK_REDIRECT_URI: ${env:SLACK_REDIRECT_URI, ''}
     SLACK_BOT_TOKEN: ${env:SLACK_BOT_TOKEN, ssm:/workbridge/${sls:stage}/slack-bot-token}
     SLACK_CHANNEL_ID: ${env:SLACK_CHANNEL_ID, ssm:/workbridge/${sls:stage}/slack-channel-id}
 
@@ -179,6 +182,22 @@ functions:
     events:
       - httpApi:
           path: /oauth/jira/callback
+          method: get
+
+  oauthSlackStart:
+    handler: src/api/oauth_slack_start.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/slack/start
+          method: get
+
+  oauthSlackCallback:
+    handler: src/api/oauth_slack_callback.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/slack/callback
           method: get
 
   oauthStatus:

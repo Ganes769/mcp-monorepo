@@ -1,6 +1,7 @@
 import json
 
 from src.clients import oauth_store
+from src.clients.oauth_redirect import slack_redirect_uri
 
 
 def handler(event, context):
@@ -19,7 +20,13 @@ def handler(event, context):
                         "connected": bool(workspace.get("jira_access_token")),
                         "siteUrl": workspace.get("jira_site_url"),
                         "siteName": workspace.get("jira_site_name"),
-                    }
+                    },
+                    "slack": {
+                        "connected": bool(workspace.get("slack_bot_token")),
+                        "teamName": workspace.get("slack_team_name"),
+                        "channelId": workspace.get("slack_channel_id"),
+                        "redirectUri": slack_redirect_uri(),
+                    },
                 }
             }
         ),

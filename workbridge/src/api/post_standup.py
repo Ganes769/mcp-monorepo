@@ -5,6 +5,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 from src.api.standup import FIELDS, _bucket, _build_text
+from src.clients import oauth_store
 from src.clients.jira import resolve_auth, resolve_base_url, search_issues
 
 
@@ -42,17 +43,23 @@ def handler(event, context):
         max_results = int(
             body.get("maxResults") or (query or {}).get("maxResults") or 50
         )
+        workspace = {}
+        try:
+            workspace = oauth_store.get_workspace() or {}
+        except Exception:
+            workspace = {}
         channel = (
             body.get("channel")
             or (query or {}).get("channel")
+            or workspace.get("slack_channel_id")
             or os.environ.get("SLACK_CHANNEL_ID")
         )
-        token = os.environ.get("SLACK_BOT_TOKEN")
+        token = workspace.get("slack_bot_token") or os.environ.get("SLACK_BOT_TOKEN")
         auth = resolve_auth(event)
         site = resolve_base_url(auth)
 
         if not token:
-            raise RuntimeError("SLACK_BOT_TOKEN must be set")
+            raise RuntimeError("Connect Slack first")
         if not channel:
             raise RuntimeError(
                 "channel is required (body/query) or set SLACK_CHANNEL_ID"
