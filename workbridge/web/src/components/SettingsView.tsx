@@ -1,70 +1,73 @@
-import type { JiraCredentials } from '../api/client'
-import { cx, theme } from '../theme'
-import { PageTitle } from './PageTitle'
+import { cx, theme } from "../theme";
+import { PageTitle } from "./PageTitle";
+import type { JiraConnection } from "../api/client";
+import { api } from "../api/client";
 
 type Props = {
-  credentials: JiraCredentials
-  onChange: (patch: Partial<JiraCredentials>) => void
-  onClear: () => void
-}
+  jira: JiraConnection;
+  onDisconnected: () => void;
+};
 
-export function SettingsView({ credentials, onChange, onClear }: Props) {
-  const { classes } = theme
+export function SettingsView({ jira, onDisconnected }: Props) {
+  const { classes } = theme;
 
   return (
     <div>
       <header className={classes.hero}>
-        <PageTitle section="Settings" />
+        <PageTitle section="Connect your org" />
       </header>
 
-      <div className="max-w-lg space-y-5 px-8 py-6">
+      <div className="max-w-xl space-y-5 px-8 py-6">
         <p className={classes.body}>
-          Credentials stay in this browser and are sent as Jira headers. Leave blank to
-          use the server environment.
+          Sign in with Atlassian. WorkBridge uses Jira OAuth — no API token is
+          stored in this browser.
         </p>
 
-        <section className={cx(classes.panel, 'space-y-4 rounded-lg p-5')}>
-          <label className={cx('grid gap-1.5', classes.muted)}>
-            Jira email
-            <input
-              type="email"
-              value={credentials.email}
-              onChange={(e) => onChange({ email: e.target.value })}
-              placeholder="you@company.com"
-              autoComplete="username"
-              className={cx('px-3 py-2 text-[14px]', classes.input)}
+        <section className={cx(classes.panel, "space-y-4 rounded-lg p-5")}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className={cx("text-[15px]", classes.heading)}>Jira</p>
+              <p className={cx("mt-1", classes.muted)}>
+                {jira.connected
+                  ? `${jira.siteName || "Atlassian site"} · ${jira.siteUrl || "Connected"}`
+                  : "Not connected"}
+              </p>
+            </div>
+            <span
+              className={cx(
+                "mt-0.5 h-2 w-2 shrink-0 rounded-full",
+                jira.connected ? "bg-emerald-500" : "bg-slate-300",
+              )}
             />
-          </label>
-          <label className={cx('grid gap-1.5', classes.muted)}>
-            API token
-            <input
-              type="password"
-              value={credentials.token}
-              onChange={(e) => onChange({ token: e.target.value })}
-              placeholder="Atlassian API token"
-              autoComplete="current-password"
-              className={cx('px-3 py-2 text-[14px]', classes.input)}
-            />
-          </label>
-          <label className={cx('grid gap-1.5', classes.muted)}>
-            Base URL
-            <input
-              type="url"
-              value={credentials.baseUrl}
-              onChange={(e) => onChange({ baseUrl: e.target.value })}
-              placeholder="https://your-site.atlassian.net"
-              className={cx('px-3 py-2 text-[14px]', classes.input)}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={onClear}
-            className={cx('px-3 py-1.5 text-[13px] font-medium', classes.secondaryButton)}
-          >
-            Clear saved
-          </button>
+          </div>
+
+          {jira.connected ? (
+            <button
+              type="button"
+              onClick={async () => {
+                await api.oauthDisconnect();
+                onDisconnected();
+              }}
+              className={cx(
+                "px-3 py-1.5 text-[13px] font-semibold",
+                classes.secondaryButton,
+              )}
+            >
+              Disconnect Jira
+            </button>
+          ) : (
+            <a
+              href={api.jiraConnectUrl()}
+              className={cx(
+                "inline-flex cursor-pointer items-center justify-center px-4 py-2 text-[13px] font-semibold",
+                classes.primaryButton,
+              )}
+            >
+              Connect Jira
+            </a>
+          )}
         </section>
       </div>
     </div>
-  )
+  );
 }

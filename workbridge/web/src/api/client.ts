@@ -1,9 +1,3 @@
-export type JiraCredentials = {
-  email: string
-  token: string
-  baseUrl: string
-}
-
 export type Project = {
   id: string
   key: string
@@ -38,29 +32,21 @@ export type StandupData = StandupGroups & {
   text: string
 }
 
-const API_BASE =
+export type JiraConnection = {
+  connected: boolean
+  siteUrl?: string
+  siteName?: string
+}
+
+export const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'https://jpoe7wlfq7.execute-api.eu-west-2.amazonaws.com'
 
-function authHeaders(creds: JiraCredentials): HeadersInit {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-  if (creds.email) headers['X-Jira-Email'] = creds.email
-  if (creds.token) headers['X-Jira-Api-Token'] = creds.token
-  if (creds.baseUrl) headers['X-Jira-Base-Url'] = creds.baseUrl
-  return headers
-}
-
-async function request<T>(
-  path: string,
-  creds: JiraCredentials,
-  init?: RequestInit,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
-      ...authHeaders(creds),
+      'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },
   })
@@ -76,26 +62,24 @@ export const api = {
     const response = await fetch(`${API_BASE}/health`)
     return response.json()
   },
-  listProjects: (creds: JiraCredentials) =>
-    request<Project[]>('/jira/projects', creds),
-  listIssues: (creds: JiraCredentials, projectKey: string) =>
+  oauthStatus: () => request<{ jira: JiraConnection }>('/oauth/status'),
+  oauthDisconnect: () => request<{ disconnected: string }>('/oauth/disconnect', { method: 'POST' }),
+  jiraConnectUrl: () => `${API_BASE}/oauth/jira/start`,
+  listProjects: () => request<Project[]>('/jira/projects'),
+  listIssues: (projectKey: string) =>
     request<{ projectKey: string; issues: Issue[]; total: number }>(
       `/jira/projects/${encodeURIComponent(projectKey)}/issues`,
-      creds,
     ),
-  getStandup: (creds: JiraCredentials, projectKey: string) =>
-    request<StandupData>(
-      `/jira/projects/${encodeURIComponent(projectKey)}/standup`,
-      creds,
-    ),
-  postStandup: (creds: JiraCredentials, projectKey: string, channel?: string) =>
+  getStandup: (projectKey: string) =>
+    request<StandupData>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`),
+  postStandup: (projectKey: string, channel?: string) =>
     request<{
       projectKey: string
       channel: string
       ts: string
       counts: StandupData['counts']
       text: string
-    }>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`, creds, {
+    }>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`, {
       method: 'POST',
       body: JSON.stringify(channel ? { channel } : {}),
     }),

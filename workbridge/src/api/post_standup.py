@@ -4,9 +4,8 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from src.api._jira_auth import credentials_from_event
 from src.api.standup import FIELDS, _bucket, _build_text
-from src.clients.jira import resolve_base_url, search_issues
+from src.clients.jira import resolve_auth, resolve_base_url, search_issues
 
 
 def _parse_body(event) -> dict:
@@ -28,11 +27,17 @@ def handler(event, context):
         query = event.get("queryStringParameters") or {}
         body = _parse_body(event)
 
-        project_key = (path_params.get("projectKey") or "KAN").upper()
+        project_key = (
+            path_params.get("projectKey")
+            or os.environ.get("STANDUP_PROJECT_KEY")
+            or ""
+        ).upper()
+        if not project_key:
+            raise RuntimeError("Select a Jira project first")
         jql = (
             body.get("jql")
             or (query or {}).get("jql")
-            or f"project = {project_key} ORDER BY cf[10019] ASC"
+            or f"project = {project_key} ORDER BY created DESC"
         )
         max_results = int(
             body.get("maxResults") or (query or {}).get("maxResults") or 50
@@ -43,8 +48,8 @@ def handler(event, context):
             or os.environ.get("SLACK_CHANNEL_ID")
         )
         token = os.environ.get("SLACK_BOT_TOKEN")
-        creds = credentials_from_event(event)
-        site = resolve_base_url(creds["base_url"])
+        auth = resolve_auth(event)
+        site = resolve_base_url(auth)
 
         if not token:
             raise RuntimeError("SLACK_BOT_TOKEN must be set")
@@ -57,9 +62,7 @@ def handler(event, context):
             jql=jql,
             fields=FIELDS,
             max_results=max_results,
-            email=creds["email"],
-            token=creds["token"],
-            base_url=creds["base_url"],
+            auth=auth,
         )
 
         groups = {"todo": [], "in_progress": [], "done": [], "blocked": []}

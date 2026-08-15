@@ -1,79 +1,69 @@
-import { useState } from 'react'
-import heroGraphic from '../assets/hero.png'
-import officeImage from '../assets/product-office.jpg'
-import peopleWorking from '../assets/people-working.jpg'
-import { SiteFooter } from './SiteFooter'
+import { useState } from "react";
+import heroGraphic from "../assets/hero.png";
+import officeImage from "../assets/product-office.jpg";
+import peopleWorking from "../assets/people-working.jpg";
+import { SiteFooter } from "./SiteFooter";
 
 type Props = {
-  onConnectOrg: () => void
-  onOpenApp: () => void
-}
+  onConnectOrg: () => void;
+  onOpenApp: () => void;
+};
 
 const highlights = [
-  { step: '01', title: 'Daily standup', body: 'Issues grouped by blocked, in progress, to do, and done.' },
-  { step: '02', title: 'Slack delivery', body: 'The same summary posts to your channel on a schedule.' },
-  { step: '03', title: 'Jira source of truth', body: 'Nothing is copied out of your existing project.' },
-]
+  {
+    step: "01",
+    title: "Daily standup",
+    body: "Issues grouped by blocked, in progress, to do, and done.",
+  },
+  {
+    step: "02",
+    title: "Slack delivery",
+    body: "The same summary posts to your channel on a schedule.",
+  },
+  {
+    step: "03",
+    title: "Jira source of truth",
+    body: "Nothing is copied out of your existing project.",
+  },
+];
 
 const stats = [
-  { value: '09:00', label: 'Weekday delivery' },
-  { value: 'Jira', label: 'Source of work' },
-  { value: 'Slack', label: 'Team channel' },
-  { value: '1 click', label: 'Org connect' },
-]
+  { value: "09:00", label: "Weekday delivery" },
+  { value: "Jira", label: "Source of work" },
+  { value: "Slack", label: "Team channel" },
+  { value: "1 click", label: "Org connect" },
+];
 
 export function HomeView({ onConnectOrg, onOpenApp }: Props) {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [company, setCompany] = useState('')
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
 
   const openDemo = () => {
-    document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })
-  }
+    document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const mailto = () => {
-    const subject = encodeURIComponent('WorkBridge demo request')
+    const subject = encodeURIComponent("WorkBridge demo request");
     const body = encodeURIComponent(
       `Name: ${name}\nWork email: ${email}\nCompany: ${company}\n\nI would like to book a demo.`,
-    )
-    window.location.href = `mailto:hello@workbridge.dev?subject=${subject}&body=${body}`
-  }
+    );
+    window.location.href = `mailto:hello@workbridge.dev?subject=${subject}&body=${body}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-950">
-      <header className="absolute inset-x-0 top-0 z-20 px-5 pt-5 sm:px-8">
-        <div className="mx-auto flex max-w-[1120px] items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
-          <p className="font-display text-lg font-semibold tracking-tight text-white">WorkBridge</p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onOpenApp}
-              className="hidden rounded-lg px-3.5 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10 sm:inline-flex"
-            >
-              Open app
-            </button>
-            <button
-              type="button"
-              onClick={onConnectOrg}
-              className="rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-slate-950"
-            >
-              Connect your org
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <section className="relative h-[94vh] min-h-[680px] overflow-hidden">
+      <section className="relative min-h-[620px] overflow-hidden">
         <div
-          className="hero-kenburns absolute inset-0 bg-cover bg-center"
+          className="hero-kenburns pointer-events-none absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${peopleWorking})` }}
         />
-        <div className="absolute inset-0 bg-[#06122e]/70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#06122e] via-[#06122e]/80 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(56,189,248,0.16),transparent_42%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[#06122e]/70" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#06122e] via-[#06122e]/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(56,189,248,0.16),transparent_42%)]" />
 
-        <div className="relative z-10 mx-auto flex h-full max-w-[1120px] items-center px-5 pb-20 pt-24 sm:px-8">
-          <div className="max-w-[620px]">
+        <div className="relative mx-auto flex min-h-[620px] max-w-[1120px] items-center px-5 py-16 sm:px-8">
+          <div className="relative max-w-[620px]">
             <p className="hero-fade-up mb-4 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.16em] text-sky-100">
               Jira + Slack operations
             </p>
@@ -81,21 +71,21 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
               The daily standup your org already needs.
             </h1>
             <p className="hero-fade-up-delay-1 mb-8 max-w-[520px] text-lg leading-7 text-slate-200">
-              Connect Jira, group the board, and send a clear morning brief to Slack.
-              No extra project tool. No copied tickets.
+              Connect Jira, group the board, and send a clear morning brief to
+              Slack. No extra project tool. No copied tickets.
             </p>
             <div className="hero-fade-up-delay-2 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={onConnectOrg}
-                className="rounded-lg bg-blue-600 px-6 py-3 text-[15px] font-semibold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] transition hover:-translate-y-0.5 hover:bg-blue-500"
+                className="relative cursor-pointer rounded-lg bg-blue-600 px-6 py-3 text-[15px] font-semibold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] transition hover:-translate-y-0.5 hover:bg-blue-500"
               >
                 Connect your org
               </button>
               <button
                 type="button"
                 onClick={openDemo}
-                className="rounded-lg border border-white/25 bg-white/5 px-6 py-3 text-[15px] font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-slate-950"
+                className="cursor-pointer rounded-lg border border-white/25 bg-white/5 px-6 py-3 text-[15px] font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-slate-950"
               >
                 Book a demo
               </button>
@@ -109,9 +99,21 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
         </div>
 
         <div className="scroll-cue absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1.5 text-white/60">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">Scroll</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">
+            Scroll
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="h-4 w-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </div>
       </section>
@@ -121,9 +123,11 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
           {stats.map((item, index) => (
             <div
               key={item.label}
-              className={`px-5 py-5 ${index > 0 ? 'border-l border-slate-200' : ''}`}
+              className={`px-5 py-5 ${index > 0 ? "border-l border-slate-200" : ""}`}
             >
-              <p className="font-display text-xl font-semibold tracking-tight text-slate-950">{item.value}</p>
+              <p className="font-display text-xl font-semibold tracking-tight text-slate-950">
+                {item.value}
+              </p>
               <p className="mt-1 text-[13px] text-slate-500">{item.label}</p>
             </div>
           ))}
@@ -147,26 +151,31 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
               Connect once. Brief every morning.
             </h2>
             <p className="mb-8 text-[17px] leading-7 text-slate-600">
-              WorkBridge reads the live Jira board, writes a professional standup, and
-              delivers it to Slack. Your team stays in the tools they already use.
+              WorkBridge reads the live Jira board, writes a professional
+              standup, and delivers it to Slack. Your team stays in the tools
+              they already use.
             </p>
             <ol className="space-y-4">
-              {['Connect Jira and Slack', 'Choose the project to brief', 'Post or schedule the standup'].map(
-                (item, index) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[11px] font-semibold text-white">
-                      {index + 1}
-                    </span>
-                    <span className="text-[15px] font-medium text-slate-800">{item}</span>
-                  </li>
-                ),
-              )}
+              {[
+                "Connect Jira and Slack",
+                "Choose the project to brief",
+                "Post or schedule the standup",
+              ].map((item, index) => (
+                <li key={item} className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[11px] font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  <span className="text-[15px] font-medium text-slate-800">
+                    {item}
+                  </span>
+                </li>
+              ))}
             </ol>
             <div className="mt-10 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={onConnectOrg}
-                className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                className="cursor-pointer rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
               >
                 Connect your org
               </button>
@@ -189,9 +198,15 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
               key={item.title}
               className="lift-card rounded-2xl border border-slate-200 bg-white p-7"
             >
-              <p className="mb-6 text-[12px] font-semibold tracking-[0.14em] text-blue-700">{item.step}</p>
-              <h3 className="font-display text-xl font-semibold tracking-tight">{item.title}</h3>
-              <p className="mt-2 text-[15px] leading-6 text-slate-600">{item.body}</p>
+              <p className="mb-6 text-[12px] font-semibold tracking-[0.14em] text-blue-700">
+                {item.step}
+              </p>
+              <h3 className="font-display text-xl font-semibold tracking-tight">
+                {item.title}
+              </h3>
+              <p className="mt-2 text-[15px] leading-6 text-slate-600">
+                {item.body}
+              </p>
             </article>
           ))}
         </div>
@@ -207,15 +222,15 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
               See the standup with your own Jira project.
             </h2>
             <p className="max-w-md text-[15px] leading-7 text-slate-300">
-              A short walkthrough of connect, briefing, and Slack delivery. No setup
-              required on the call.
+              A short walkthrough of connect, briefing, and Slack delivery. No
+              setup required on the call.
             </p>
           </div>
           <form
             className="space-y-4 bg-white p-8 sm:p-12"
             onSubmit={(e) => {
-              e.preventDefault()
-              mailto()
+              e.preventDefault();
+              mailto();
             }}
           >
             <label className="grid gap-1.5 text-[13px] font-medium text-slate-600">
@@ -259,7 +274,11 @@ export function HomeView({ onConnectOrg, onOpenApp }: Props) {
         </div>
       </section>
 
-      <SiteFooter onConnectOrg={onConnectOrg} onOpenApp={onOpenApp} onBookDemo={openDemo} />
+      <SiteFooter
+        onConnectOrg={onConnectOrg}
+        onOpenApp={onOpenApp}
+        onBookDemo={openDemo}
+      />
     </div>
-  )
+  );
 }

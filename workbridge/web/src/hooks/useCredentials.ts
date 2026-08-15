@@ -1,34 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { JiraCredentials } from '../api/client'
+import { useCallback, useState } from 'react'
 
-const STORAGE_KEY = 'workbridge.jira.credentials'
+const STORAGE_KEY = 'workbridge.selectedProject'
 
-const defaults: JiraCredentials = {
-  email: '',
-  token: '',
-  baseUrl: 'https://ganeshsnawali.atlassian.net',
-}
-
-export function useCredentials() {
-  const [credentials, setCredentials] = useState<JiraCredentials>(() => {
+export function useSelectedProject() {
+  const [projectKey, setProjectKeyState] = useState(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return defaults
-      return { ...defaults, ...JSON.parse(raw) }
+      return localStorage.getItem(STORAGE_KEY) || ''
     } catch {
-      return defaults
+      return ''
     }
   })
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials))
-  }, [credentials])
-
-  const update = useCallback((patch: Partial<JiraCredentials>) => {
-    setCredentials((prev) => ({ ...prev, ...patch }))
+  const setProjectKey = useCallback((key: string) => {
+    setProjectKeyState(key)
+    try {
+      if (key) localStorage.setItem(STORAGE_KEY, key)
+      else localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      /* ignore */
+    }
   }, [])
 
-  const clear = useCallback(() => setCredentials(defaults), [])
-
-  return { credentials, update, clear, setCredentials }
+  return { projectKey, setProjectKey }
 }

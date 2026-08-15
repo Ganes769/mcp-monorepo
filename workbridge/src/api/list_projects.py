@@ -1,18 +1,15 @@
 import json
 
-from src.api._jira_auth import credentials_from_event
-from src.clients.jira import jira_get
+from src.clients.jira import jira_get, resolve_auth
 
 
 def handler(event, context):
     try:
-        creds = credentials_from_event(event)
+        auth = resolve_auth(event)
         data = jira_get(
             "/rest/api/3/project/search",
             params={"maxResults": 50},
-            email=creds["email"],
-            token=creds["token"],
-            base_url=creds["base_url"],
+            auth=auth,
         )
         projects = [
             {

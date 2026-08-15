@@ -36,11 +36,25 @@ provider:
         - OPTIONS
       allowCredentials: true
       maxAge: 86400
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:UpdateItem
+          Resource:
+            - !GetAtt ConnectionsTable.Arn
   environment:
     STAGE: ${sls:stage}
-    JIRA_BASE_URL: ${env:JIRA_BASE_URL, 'https://ganeshsnawali.atlassian.net'}
-    JIRA_EMAIL: ${env:JIRA_EMAIL, ssm:/workbridge/${sls:stage}/jira-email}
-    JIRA_API_TOKEN: ${env:JIRA_API_TOKEN, ssm:/workbridge/${sls:stage}/jira-api-token}
+    CONNECTIONS_TABLE: workbridge-${sls:stage}-connections
+    JIRA_OAUTH_CLIENT_ID: ${env:JIRA_OAUTH_CLIENT_ID, ''}
+    JIRA_OAUTH_CLIENT_SECRET: ${env:JIRA_OAUTH_CLIENT_SECRET, ''}
+    OAUTH_REDIRECT_BASE: ${env:OAUTH_REDIRECT_BASE, ''}
+    WEB_APP_URL: ${env:WEB_APP_URL, 'http://localhost:5173'}
+    STANDUP_PROJECT_KEY: ${env:STANDUP_PROJECT_KEY, ''}
     SLACK_BOT_TOKEN: ${env:SLACK_BOT_TOKEN, ssm:/workbridge/${sls:stage}/slack-bot-token}
     SLACK_CHANNEL_ID: ${env:SLACK_CHANNEL_ID, ssm:/workbridge/${sls:stage}/slack-channel-id}
 
@@ -149,10 +163,39 @@ functions:
           description: Post Jira standup to Slack weekdays at 09:00 London
           rate: cron(0 9 ? * MON-FRI *)
           timezone: Europe/London
-          enabled: true
-          input:
-            pathParameters:
-              projectKey: KAN
+          enabled: false
+
+  oauthJiraStart:
+    handler: src/api/oauth_jira_start.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/jira/start
+          method: get
+
+  oauthJiraCallback:
+    handler: src/api/oauth_jira_callback.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/jira/callback
+          method: get
+
+  oauthStatus:
+    handler: src/api/oauth_status.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/status
+          method: get
+
+  oauthDisconnect:
+    handler: src/api/oauth_disconnect.handler
+    layers: *commonLayers
+    events:
+      - httpApi:
+          path: /oauth/disconnect
+          method: post
 
 custom:
   scripts:
@@ -161,3 +204,18 @@ custom:
 
 plugins:
   - serverless-offline
+
+resources:
+  Resources:
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: workbridge-${sls:stage}-connections
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+

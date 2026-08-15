@@ -1,8 +1,8 @@
 type Props = {
-  onConnectOrg: () => void
-  onOpenApp: () => void
-  onBookDemo: () => void
-}
+  onConnectOrg: () => void;
+  onOpenApp: () => void;
+  onBookDemo: () => void;
+};
 
 export function SiteFooter({ onConnectOrg, onOpenApp, onBookDemo }: Props) {
   return (
@@ -22,13 +22,25 @@ export function SiteFooter({ onConnectOrg, onOpenApp, onBookDemo }: Props) {
               <h4 className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 Product
               </h4>
-              <button type="button" onClick={onOpenApp} className="block pb-2 text-left text-slate-200 hover:text-white">
+              <button
+                type="button"
+                onClick={onOpenApp}
+                className="block cursor-pointer pb-2 text-left text-slate-200 hover:text-white"
+              >
                 Standup
               </button>
-              <button type="button" onClick={onConnectOrg} className="block pb-2 text-left text-slate-200 hover:text-white">
+              <button
+                type="button"
+                onClick={onConnectOrg}
+                className="block cursor-pointer pb-2 text-left text-slate-200 hover:text-white"
+              >
                 Connect your org
               </button>
-              <button type="button" onClick={onBookDemo} className="block pb-2 text-left text-slate-200 hover:text-white">
+              <button
+                type="button"
+                onClick={onBookDemo}
+                className="block cursor-pointer pb-2 text-left text-slate-200 hover:text-white"
+              >
                 Book a demo
               </button>
             </div>
@@ -48,5 +60,5 @@ export function SiteFooter({ onConnectOrg, onOpenApp, onBookDemo }: Props) {
         </div>
       </div>
     </footer>
-  )
+  );
 }
