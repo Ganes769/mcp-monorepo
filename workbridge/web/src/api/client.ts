@@ -18,17 +18,45 @@ export type Issue = {
   url?: string
 }
 
-export type StandupGroups = {
-  todo: Issue[]
-  in_progress: Issue[]
-  done: Issue[]
+export type StandupTeam = {
   blocked: Issue[]
+  in_progress: Issue[]
+  done_yesterday: Issue[]
+  counts: {
+    blocked: number
+    in_progress: number
+    done_yesterday: number
+    todo: number
+    done: number
+    stale: number
+    unassigned: number
+    total: number
+  }
 }
 
-export type StandupData = StandupGroups & {
+export type StandupMe = {
+  accountId?: string
+  displayName?: string
+  empty: boolean
+  emptyMessage: string
+  in_progress: Issue[]
+  blocked: Issue[]
+  done_yesterday: Issue[]
+}
+
+export type StandupAtRisk = {
+  blocked: Issue[]
+  stale: Issue[]
+  unassigned: Issue[]
+}
+
+export type StandupData = {
   projectKey: string
   jql: string
-  counts: Record<keyof StandupGroups, number>
+  staleDays: number
+  team: StandupTeam
+  me: StandupMe
+  atRisk: StandupAtRisk
   text: string
 }
 
@@ -85,14 +113,11 @@ export const api = {
   getStandup: (projectKey: string) =>
     request<StandupData>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`),
   postStandup: (projectKey: string, channel?: string) =>
-    request<{
-      projectKey: string
-      channel: string
-      ts: string
-      counts: StandupData['counts']
-      text: string
-    }>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`, {
-      method: 'POST',
-      body: JSON.stringify(channel ? { channel } : {}),
-    }),
+    request<StandupData & { channel: string; ts: string }>(
+      `/jira/projects/${encodeURIComponent(projectKey)}/standup`,
+      {
+        method: 'POST',
+        body: JSON.stringify(channel ? { channel } : {}),
+      },
+    ),
 }

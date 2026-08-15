@@ -4,9 +4,9 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from src.api.standup import FIELDS, _bucket, _build_text
+from src.api.standup import FIELDS, _stale_days, build_standup_payload
 from src.clients import oauth_store
-from src.clients.jira import resolve_auth, resolve_base_url, search_issues
+from src.clients.jira import get_myself, resolve_auth, resolve_base_url, search_issues
 
 
 def _parse_body(event) -> dict:
@@ -38,7 +38,7 @@ def handler(event, context):
         jql = (
             body.get("jql")
             or (query or {}).get("jql")
-            or f"project = {project_key} ORDER BY created DESC"
+            or f"project = {project_key} ORDER BY updated DESC"
         )
         max_results = int(
             body.get("maxResults") or (query or {}).get("maxResults") or 50
@@ -65,29 +65,28 @@ def handler(event, context):
                 "channel is required (body/query) or set SLACK_CHANNEL_ID"
             )
 
+        myself = None
+        try:
+            myself = get_myself(auth=auth)
+        except Exception:
+            myself = None
+
         data = search_issues(
             jql=jql,
             fields=FIELDS,
             max_results=max_results,
             auth=auth,
         )
-
-        groups = {"todo": [], "in_progress": [], "done": [], "blocked": []}
-        for issue in data.get("issues") or []:
-            fields = issue.get("fields") or {}
-            status = (fields.get("status") or {}).get("name")
-            item = {
-                "key": issue.get("key"),
-                "summary": fields.get("summary"),
-                "status": status,
-                "assignee": (fields.get("assignee") or {}).get("displayName"),
-                "url": f"{site}/browse/{issue.get('key')}",
-            }
-            groups[_bucket(status, fields.get("labels") or [])].append(item)
-
-        text = _build_text(project_key, groups)
+        payload = build_standup_payload(
+            issues=data.get("issues") or [],
+            site=site,
+            project_key=project_key,
+            jql=jql,
+            myself=myself,
+            stale_days=_stale_days(query or body),
+        )
         client = WebClient(token=token)
-        result = client.chat_postMessage(channel=channel, text=text)
+        result = client.chat_postMessage(channel=channel, text=payload["text"])
 
         return {
             "statusCode": 200,
@@ -95,13 +94,12 @@ def handler(event, context):
             "body": json.dumps(
                 {
                     "data": {
-                        "projectKey": project_key,
+                        **payload,
                         "channel": channel,
                         "ts": result.get("ts"),
-                        "counts": {key: len(value) for key, value in groups.items()},
-                        "text": text,
                     }
-                }
+                },
+                default=str,
             ),
         }
     except SlackApiError as exc:

@@ -102,20 +102,7 @@ export default function App() {
     setStandupError(null);
     try {
       const data = await api.postStandup(projectKey);
-      setStandup((prev) =>
-        prev
-          ? { ...prev, text: data.text, counts: data.counts }
-          : {
-              projectKey: data.projectKey,
-              jql: "",
-              counts: data.counts,
-              todo: [],
-              in_progress: [],
-              done: [],
-              blocked: [],
-              text: data.text,
-            },
-      );
+      setStandup(data);
     } catch (err) {
       setStandupError(
         err instanceof Error ? err.message : "Failed to post standup",

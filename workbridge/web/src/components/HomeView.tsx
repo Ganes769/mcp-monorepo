@@ -13,7 +13,7 @@ const highlights = [
   {
     step: "01",
     title: "Daily standup",
-    body: "Issues grouped by blocked, in progress, to do, and done.",
+    body: "Team, Me, and At risk — not a dump of the whole board.",
   },
   {
     step: "02",

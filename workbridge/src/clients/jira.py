@@ -144,6 +144,13 @@ def jira_post(
     return response.json()
 
 
+def get_myself(
+    auth: dict[str, str] | None = None,
+    event: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return jira_get("/rest/api/3/myself", auth=auth, event=event)
+
+
 def search_issues(
     jql: str,
     fields: list[str],
