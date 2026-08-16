@@ -27,6 +27,7 @@ def handler(event, context):
                         "channelId": workspace.get("slack_channel_id"),
                         "redirectUri": slack_redirect_uri(),
                     },
+                    "projectKey": workspace.get("standup_project_key") or "",
                 }
             }
         ),

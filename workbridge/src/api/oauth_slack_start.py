@@ -21,7 +21,7 @@ def handler(event, context):
     query = urlencode(
         {
             "client_id": client_id,
-            "scope": "chat:write,channels:read",
+            "scope": "chat:write,channels:read,im:write,users:read,users:read.email",
             "redirect_uri": redirect_uri,
             "state": state,
         }

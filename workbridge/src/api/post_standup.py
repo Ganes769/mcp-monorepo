@@ -7,6 +7,7 @@ from slack_sdk.errors import SlackApiError
 from src.api.standup import FIELDS, _stale_days, build_standup_payload
 from src.clients import oauth_store
 from src.clients.jira import get_myself, resolve_auth, resolve_base_url, search_issues
+from src.clients.slack_dm import slack_text_with_mentions
 
 
 def _parse_body(event) -> dict:
@@ -86,7 +87,14 @@ def handler(event, context):
             stale_days=_stale_days(query or body),
         )
         client = WebClient(token=token)
-        result = client.chat_postMessage(channel=channel, text=payload["text"])
+        text = slack_text_with_mentions(
+            client,
+            payload["text"],
+            payload,
+            myself=myself,
+            ping=True,
+        )
+        result = client.chat_postMessage(channel=channel, text=text)
 
         return {
             "statusCode": 200,

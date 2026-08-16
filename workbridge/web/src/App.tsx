@@ -46,11 +46,18 @@ export default function App() {
       const data = await api.oauthStatus();
       setJira(data.jira);
       setSlack(data.slack || { connected: false });
+      if (!projectKey && data.projectKey) {
+        setProjectKey(data.projectKey);
+      }
     } catch {
       setJira({ connected: false });
       setSlack({ connected: false });
     }
-  }, []);
+  }, [projectKey, setProjectKey]);
+
+  useEffect(() => {
+    if (projectKey) void api.saveWorkspace(projectKey);
+  }, [projectKey]);
 
   useEffect(() => {
     if (window.location.pathname === "/oauth/slack/callback") {
@@ -221,6 +228,7 @@ export default function App() {
             onPost={postStandup}
             posting={posting}
             projectName={projectName}
+            projectKey={projectKey}
             slackConnected={slack.connected}
           />
         )}
@@ -232,6 +240,7 @@ export default function App() {
             selectedKey={projectKey}
             onSelect={(key) => {
               setProjectKey(key);
+              void api.saveWorkspace(key);
               setNav("standup");
             }}
             onRefresh={loadProjects}

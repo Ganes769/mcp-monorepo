@@ -50,6 +50,24 @@ export type StandupAtRisk = {
   unassigned: Issue[]
 }
 
+export type StandupAi = {
+  status?: 'ok' | 'skipped' | 'failed'
+  summary?: string
+  asks?: string[]
+  questions?: string[]
+  reason?: string
+}
+
+export type StandupAssignee = {
+  accountId: string
+  displayName?: string
+  email?: string
+  blocked: Issue[]
+  in_progress: Issue[]
+  done_yesterday: Issue[]
+  questions?: string[]
+}
+
 export type StandupData = {
   projectKey: string
   jql: string
@@ -57,7 +75,9 @@ export type StandupData = {
   team: StandupTeam
   me: StandupMe
   atRisk: StandupAtRisk
+  assignees?: StandupAssignee[]
   text: string
+  ai?: StandupAi | null
 }
 
 export type JiraConnection = {
@@ -97,7 +117,8 @@ export const api = {
     const response = await fetch(`${API_BASE}/health`)
     return response.json()
   },
-  oauthStatus: () => request<{ jira: JiraConnection; slack: SlackConnection }>('/oauth/status'),
+  oauthStatus: () =>
+    request<{ jira: JiraConnection; slack: SlackConnection; projectKey?: string }>('/oauth/status'),
   oauthDisconnect: (provider: 'jira' | 'slack' = 'jira') =>
     request<{ disconnected: string }>('/oauth/disconnect', {
       method: 'POST',
@@ -120,4 +141,18 @@ export const api = {
         body: JSON.stringify(channel ? { channel } : {}),
       },
     ),
+  saveWorkspace: (projectKey: string) =>
+    request<{ projectKey: string }>('/workspace', {
+      method: 'POST',
+      body: JSON.stringify({ projectKey }),
+    }),
+  sendPrep: (projectKey: string, options?: { accountId?: string; toMe?: boolean }) =>
+    request<{ sent: string[]; skipped: string[]; projectKey: string }>('/standup/prep', {
+      method: 'POST',
+      body: JSON.stringify({
+        projectKey,
+        ...(options?.accountId ? { accountId: options.accountId } : {}),
+        ...(options?.toMe ? { toMe: true } : {}),
+      }),
+    }),
 }

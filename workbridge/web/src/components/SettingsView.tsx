@@ -120,7 +120,9 @@ export function SettingsView({
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
             <p className="font-display text-xl font-semibold">Workspace ready</p>
             <p className="mt-2 text-[15px] leading-6 text-slate-300">
-              Both tools are connected. Open standup to brief the team.
+              Both tools are connected. Open standup and pick a project. Weekdays
+              at 09:50 London, each assignee gets a Slack DM to prepare for DSU.
+              Reconnect Slack once so DMs are allowed.
             </p>
             {onOpenApp && (
               <button

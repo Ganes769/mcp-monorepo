@@ -53,12 +53,14 @@ def handler(event, context):
 
     team = payload.get("team") or {}
     webhook = payload.get("incoming_webhook") or {}
+    authed = payload.get("authed_user") or {}
     oauth_store.put_workspace(
         {
             "slack_bot_token": payload.get("access_token"),
             "slack_team_id": team.get("id"),
             "slack_team_name": team.get("name"),
             "slack_channel_id": webhook.get("channel_id") or None,
+            "slack_authed_user_id": authed.get("id") or None,
         }
     )
 
