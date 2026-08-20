@@ -31,7 +31,7 @@ export function IssuesView({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className={cx('px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.secondaryButton)}
+          className={cx('cursor-pointer px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.secondaryButton)}
         >
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -56,8 +56,8 @@ export function IssuesView({
             <span className={classes.muted}>Priority</span>
           </div>
           <ul>
-            {issues.map((issue) => (
-              <li key={issue.key}>
+            {issues.map((issue, index) => (
+              <li key={issue.key || `issue-${index}`}>
                 <a
                   href={issue.url}
                   target="_blank"

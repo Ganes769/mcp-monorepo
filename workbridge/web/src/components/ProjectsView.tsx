@@ -29,7 +29,7 @@ export function ProjectsView({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className={cx('px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.secondaryButton)}
+          className={cx('cursor-pointer px-3 py-1.5 text-[13px] font-medium disabled:opacity-50', classes.secondaryButton)}
         >
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>

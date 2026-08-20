@@ -97,6 +97,52 @@ export const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'https://jpoe7wlfq7.execute-api.eu-west-2.amazonaws.com'
 
+const EMPTY_COUNTS: StandupTeam['counts'] = {
+  blocked: 0,
+  in_progress: 0,
+  done_yesterday: 0,
+  todo: 0,
+  done: 0,
+  stale: 0,
+  unassigned: 0,
+  total: 0,
+}
+
+export function normalizeStandup(raw: Partial<StandupData> | null | undefined): StandupData | null {
+  if (!raw || typeof raw !== 'object') return null
+  const team = raw.team || ({} as StandupTeam)
+  const me = raw.me || ({} as StandupMe)
+  const atRisk = raw.atRisk || ({} as StandupAtRisk)
+  return {
+    projectKey: raw.projectKey || '',
+    jql: raw.jql || '',
+    staleDays: raw.staleDays ?? 3,
+    team: {
+      blocked: team.blocked || [],
+      in_progress: team.in_progress || [],
+      done_yesterday: team.done_yesterday || [],
+      counts: { ...EMPTY_COUNTS, ...(team.counts || {}) },
+    },
+    me: {
+      accountId: me.accountId,
+      displayName: me.displayName,
+      empty: Boolean(me.empty),
+      emptyMessage: me.emptyMessage || 'Nothing assigned to you',
+      blocked: me.blocked || [],
+      in_progress: me.in_progress || [],
+      done_yesterday: me.done_yesterday || [],
+    },
+    atRisk: {
+      blocked: atRisk.blocked || [],
+      stale: atRisk.stale || [],
+      unassigned: atRisk.unassigned || [],
+    },
+    assignees: (raw.assignees || []).filter(Boolean),
+    text: raw.text || '',
+    ai: raw.ai,
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -131,16 +177,22 @@ export const api = {
     request<{ projectKey: string; issues: Issue[]; total: number }>(
       `/jira/projects/${encodeURIComponent(projectKey)}/issues`,
     ),
-  getStandup: (projectKey: string) =>
-    request<StandupData>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`),
-  postStandup: (projectKey: string, channel?: string) =>
-    request<StandupData & { channel: string; ts: string }>(
+  getStandup: async (projectKey: string) =>
+    normalizeStandup(
+      await request<StandupData>(`/jira/projects/${encodeURIComponent(projectKey)}/standup`),
+    ),
+  postStandup: async (projectKey: string, channel?: string) => {
+    const data = await request<StandupData & { channel: string; ts: string }>(
       `/jira/projects/${encodeURIComponent(projectKey)}/standup`,
       {
         method: 'POST',
         body: JSON.stringify(channel ? { channel } : {}),
       },
-    ),
+    )
+    const normalized = normalizeStandup(data)
+    if (!normalized) throw new Error('Standup response was empty')
+    return { ...normalized, channel: data.channel, ts: data.ts }
+  },
   saveWorkspace: (projectKey: string) =>
     request<{ projectKey: string }>('/workspace', {
       method: 'POST',

@@ -11,14 +11,17 @@ export function useSelectedProject() {
     }
   })
 
-  const setProjectKey = useCallback((key: string) => {
-    setProjectKeyState(key)
-    try {
-      if (key) localStorage.setItem(STORAGE_KEY, key)
-      else localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      /* ignore */
-    }
+  const setProjectKey = useCallback((key: string | ((current: string) => string)) => {
+    setProjectKeyState((current) => {
+      const next = typeof key === 'function' ? key(current) : key
+      try {
+        if (next) localStorage.setItem(STORAGE_KEY, next)
+        else localStorage.removeItem(STORAGE_KEY)
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
   }, [])
 
   return { projectKey, setProjectKey }

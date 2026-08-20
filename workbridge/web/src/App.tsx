@@ -21,7 +21,7 @@ type NavId = "home" | "standup" | "projects" | "issues" | "settings";
 
 export default function App() {
   const { projectKey, setProjectKey } = useSelectedProject();
-  const [nav, setNav] = useState<NavId>("home");
+  const [nav, setNav] = useState<NavId>("standup");
   const [healthy, setHealthy] = useState<boolean | null>(null);
   const [jira, setJira] = useState<JiraConnection>({ connected: false });
   const [slack, setSlack] = useState<SlackConnection>({ connected: false });
@@ -129,6 +129,9 @@ export default function App() {
     try {
       const data = await api.listProjects();
       setProjects(data);
+      if (data[0]?.key) {
+        setProjectKey((current) => current || data[0].key);
+      }
     } catch (err) {
       setProjectsError(
         err instanceof Error ? err.message : "Failed to load projects",
@@ -136,7 +139,7 @@ export default function App() {
     } finally {
       setProjectsLoading(false);
     }
-  }, [jira.connected]);
+  }, [jira.connected, setProjectKey]);
 
   const loadIssues = useCallback(async () => {
     if (!projectKey) {
