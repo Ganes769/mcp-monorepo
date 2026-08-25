@@ -3,3 +3,9 @@ langchain-core
 langchain-community
 langchain-groq
 langchain-google-genai
+pypdf
+beautifulsoup4
+langchain_huggingface
+sentence-transformers
+wikipedia
+langchain_chroma
