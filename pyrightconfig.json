@@ -1,0 +1,10 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "langchain-langraph/langchain",
+      "venv": ".venv",
+      "venvPath": "langchain-langraph/langchain",
+      "pythonVersion": "3.11"
+    }
+  ]
+}
