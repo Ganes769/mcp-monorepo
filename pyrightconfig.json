@@ -1,0 +1,16 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "langchain-langraph/rag-gist",
+      "venv": ".venv",
+      "venvPath": "langchain-langraph/rag-gist",
+      "pythonVersion": "3.11"
+    },
+    {
+      "root": "langchain-langraph/langchain",
+      "venv": ".venv",
+      "venvPath": "langchain-langraph/langchain",
+      "pythonVersion": "3.11"
+    }
+  ]
+}

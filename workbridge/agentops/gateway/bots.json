@@ -1,0 +1,24 @@
+{
+  "defaultPolicy": "allow",
+  "bots": {
+    "Engineering Bot": {
+      "scopes": [
+        "jira.*",
+        "slack.*"
+      ],
+      "paused": false
+    },
+    "Support Bot": {
+      "scopes": [
+        "slack.*"
+      ],
+      "paused": false
+    },
+    "Finance Bot": {
+      "scopes": [
+        "slack.*"
+      ],
+      "paused": false
+    }
+  }
+}
