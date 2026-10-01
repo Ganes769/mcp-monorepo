@@ -1,5 +1,5 @@
 (function (window, $) {
-  'use strict';
+  "use strict";
 
   const config = window.WorkBridgeConfig;
 
@@ -7,14 +7,14 @@
     try {
       const raw = localStorage.getItem(config.storageKey);
       if (!raw) {
-        return { email: '', token: '', baseUrl: config.defaultBaseUrl };
+        return { email: "", token: "", baseUrl: config.defaultBaseUrl };
       }
       return Object.assign(
-        { email: '', token: '', baseUrl: config.defaultBaseUrl },
+        { email: "", token: "", baseUrl: config.defaultBaseUrl },
         JSON.parse(raw),
       );
     } catch (err) {
-      return { email: '', token: '', baseUrl: config.defaultBaseUrl };
+      return { email: "", token: "", baseUrl: config.defaultBaseUrl };
     }
   }
 
@@ -27,10 +27,10 @@
   }
 
   function authHeaders(creds) {
-    const headers = { 'Content-Type': 'application/json' };
-    if (creds.email) headers['X-Jira-Email'] = creds.email;
-    if (creds.token) headers['X-Jira-Api-Token'] = creds.token;
-    if (creds.baseUrl) headers['X-Jira-Base-Url'] = creds.baseUrl;
+    const headers = { "Content-Type": "application/json" };
+    if (creds.email) headers["X-Jira-Email"] = creds.email;
+    if (creds.token) headers["X-Jira-Api-Token"] = creds.token;
+    if (creds.baseUrl) headers["X-Jira-Base-Url"] = creds.baseUrl;
     return headers;
   }
 
@@ -38,12 +38,12 @@
     const creds = getCredentials();
     const opts = options || {};
     return $.ajax({
-      url: config.apiBaseUrl.replace(/\/$/, '') + path,
-      method: opts.method || 'GET',
+      url: config.apiBaseUrl.replace(/\/$/, "") + path,
+      method: opts.method || "GET",
       data: opts.body ? JSON.stringify(opts.body) : undefined,
       headers: authHeaders(creds),
-      contentType: 'application/json',
-      dataType: 'json',
+      contentType: "application/json",
+      dataType: "json",
     }).then(function (payload) {
       return payload.data !== undefined ? payload.data : payload;
     });
@@ -54,22 +54,29 @@
     saveCredentials: saveCredentials,
     clearCredentials: clearCredentials,
     health: function () {
-      return $.getJSON(config.apiBaseUrl.replace(/\/$/, '') + '/health');
+      return $.getJSON(config.apiBaseUrl.replace(/\/$/, "") + "/health");
     },
     listProjects: function () {
-      return request('/jira/projects');
+      return request("/jira/projects");
     },
     listIssues: function (projectKey) {
-      return request('/jira/projects/' + encodeURIComponent(projectKey) + '/issues');
+      return request(
+        "/jira/projects/" + encodeURIComponent(projectKey) + "/issues",
+      );
     },
     getStandup: function (projectKey) {
-      return request('/jira/projects/' + encodeURIComponent(projectKey) + '/standup');
+      return request(
+        "/jira/projects/" + encodeURIComponent(projectKey) + "/standup",
+      );
     },
     postStandup: function (projectKey, channel) {
-      return request('/jira/projects/' + encodeURIComponent(projectKey) + '/standup', {
-        method: 'POST',
-        body: channel ? { channel: channel } : {},
-      });
+      return request(
+        "/jira/projects/" + encodeURIComponent(projectKey) + "/standup",
+        {
+          method: "POST",
+          body: channel ? { channel: channel } : {},
+        },
+      );
     },
   };
 })(window, jQuery);

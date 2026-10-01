@@ -1,0 +1,362 @@
+import { type ReactNode, useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { ArrowRight, Check, FileSearch, Lock, Mail, ShieldCheck, Sparkles, Timer, UserCheck, Wallet } from 'lucide-react'
+import { APP, LOGIN } from '@/lib/paths'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/layout/Sidebar'
+import { useAuth } from '@/auth/AuthProvider'
+
+const NAV = [
+  { href: '#product', label: 'Product' },
+  { href: '#how', label: 'How it works' },
+  { href: '#proof', label: 'Why it works' },
+]
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const onChange = () => setReduced(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return reduced
+}
+
+function Rise({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
+  const reduced = usePrefersReducedMotion()
+  return (
+    <div className={cn(!reduced && 'marketing-rise', className)} style={reduced ? undefined : { animationDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
+
+function MeshBackdrop() {
+  const reduced = usePrefersReducedMotion()
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div
+        className={cn('absolute -left-24 -top-32 size-[28rem] rounded-full bg-lime/25 blur-3xl', !reduced && 'marketing-orb')}
+      />
+      <div
+        className={cn('absolute -right-16 top-24 size-[22rem] rounded-full bg-peach/20 blur-3xl', !reduced && 'marketing-orb')}
+        style={reduced ? undefined : { animationDelay: '-4s' }}
+      />
+      <div
+        className={cn('absolute bottom-0 left-1/3 size-[18rem] rounded-full bg-sun/25 blur-3xl', !reduced && 'marketing-orb')}
+        style={reduced ? undefined : { animationDelay: '-8s' }}
+      />
+    </div>
+  )
+}
+
+function ProductNav() {
+  const [scrolled, setScrolled] = useState(false)
+  const { isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <header className={cn('sticky top-0 z-40 border-b transition-colors duration-300', scrolled ? 'border-border bg-background/90 backdrop-blur' : 'border-transparent bg-background/70 backdrop-blur')}>
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
+        <Logo to="/" />
+        <nav className="hidden items-center gap-6 text-[13.5px] font-medium text-muted-foreground md:flex" aria-label="Product">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href} className="transition-colors hover:text-foreground">
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <div className="ml-auto flex items-center gap-2">
+          {isAuthenticated ? (
+            <Button asChild>
+              <Link to={APP}>
+                Open desk <ArrowRight />
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                <a href="#how">How it works</a>
+              </Button>
+              <Button asChild>
+                <Link to={LOGIN}>Log in</Link>
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function HeroMock() {
+  const reduced = usePrefersReducedMotion()
+  const bars = [
+    { h: 42, fill: 'bg-lime' },
+    { h: 58, fill: 'bg-peach' },
+    { h: 48, fill: 'bg-lime' },
+    { h: 72, fill: 'bg-peach' },
+    { h: 64, fill: 'bg-lime' },
+    { h: 86, fill: 'bg-peach' },
+  ]
+  return (
+    <div className={cn('relative', !reduced && 'marketing-float')}>
+      <div className={cn('absolute -inset-3 rounded-[1.35rem] bg-lime/15 blur-xl', !reduced && 'marketing-glow')} aria-hidden />
+      <div className="relative overflow-hidden rounded-2xl border bg-card shadow-[0_24px_60px_-28px_rgba(20,20,20,0.35)]">
+        <div className="flex items-center justify-between border-b px-4 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Brightline Facilities · receivables</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sun-soft px-2 py-0.5 text-[11px] font-semibold text-sun-strong">
+            <span className={cn('size-1.5 rounded-full bg-sun', !reduced && 'marketing-pulse')} aria-hidden />
+            Agent watching
+          </span>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-3">
+          {[
+            { label: 'Outstanding', value: '£128,450', tone: '' },
+            { label: 'Overdue', value: '£74,820', tone: 'text-peach-strong' },
+            { label: 'Recovered this month', value: '£32,400', tone: 'text-lime-strong' },
+          ].map((kpi) => (
+            <div key={kpi.label} className="rounded-xl border bg-muted/40 px-3 py-2.5">
+              <p className="text-[11px] text-muted-foreground">{kpi.label}</p>
+              <p className={cn('mt-0.5 text-lg font-semibold tabular', kpi.tone)}>{kpi.value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex h-28 items-end gap-2 px-5 pb-4" aria-hidden>
+          {bars.map((bar, i) => (
+            <span
+              key={i}
+              className={cn('w-full rounded-t-md', bar.fill, !reduced && 'marketing-bar')}
+              style={{ height: `${bar.h}%`, animationDelay: reduced ? undefined : `${180 + i * 70}ms` }}
+            />
+          ))}
+        </div>
+        <div className="border-t px-4 py-3">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Needs a human</p>
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-peach-soft/60 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold">INV-48291 · Northstar Ltd</p>
+              <p className="truncate text-xs text-muted-foreground">AI suggests: send corrected invoice with PO-8821</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">Approve</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const STEPS = [
+  { icon: FileSearch, title: 'Read the books', body: 'Connect Xero once. The agent pulls contacts from your organisation and reads invoices, payments and history — nothing is guessed from thin air.' },
+  { icon: Sparkles, title: 'Investigate the delay', body: 'It searches emails, contracts and previous invoices, then writes a finding labelled as a hypothesis — never as fact.' },
+  { icon: UserCheck, title: 'You decide', body: 'Every customer-facing action waits in the Approval Centre. Edit the draft, approve it, or reject it.' },
+  { icon: Mail, title: 'Act, then watch', body: 'Once you approve, the follow-up is scheduled and payment is tracked until the invoice is actually paid.' },
+]
+
+const PROBLEMS = [
+  { icon: Timer, title: 'Late invoices sit unnoticed', body: 'Credit controllers chase the loudest customer, not the one most likely to pay this week.' },
+  { icon: Wallet, title: 'Cash is trapped in AR', body: 'UK SMEs typically have tens of thousands outstanding. Most of it is recoverable with the right next step.' },
+  { icon: Lock, title: 'AI that emails customers is dangerous', body: 'A wrong reminder on a disputed invoice burns the relationship. CashFlow OS never sends without you.' },
+]
+
+const GUARANTEES = [
+  'Log in with email or continue with Xero.',
+  'Live contacts load after you connect Xero. Nothing is sent without you.',
+  'AI findings are labelled as hypotheses.',
+  'Human approval is required before any customer contact.',
+]
+
+export function MarketingHomePage() {
+  const { isAuthenticated } = useAuth()
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <MeshBackdrop />
+      <div className="relative">
+        <ProductNav />
+
+        <main>
+          <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
+            <div>
+              <Rise>
+                <p className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1 text-[12px] font-medium shadow-xs backdrop-blur">
+                  <Sparkles className="size-3.5 text-lime-strong" aria-hidden />
+                  AI accounts receivable for UK SMEs
+                </p>
+              </Rise>
+              <Rise delay={80}>
+                <h1 className="mt-5 max-w-xl text-[2.35rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-5xl">
+                  Get paid faster. <span className="text-muted-foreground">Never let an agent talk to a customer without you.</span>
+                </h1>
+              </Rise>
+              <Rise delay={160}>
+                <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
+                  CashFlow OS watches overdue invoices, finds the likely reason they haven’t been paid, and drafts the next action. You approve it. Then it follows up until the money lands.
+                </p>
+              </Rise>
+              <Rise delay={240}>
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <Button size="lg" asChild>
+                    <Link to={isAuthenticated ? APP : LOGIN}>
+                      {isAuthenticated ? 'Open the collections desk' : 'Log in'} <ArrowRight />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <a href="#how">See how it works</a>
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {isAuthenticated ? 'Welcome back. Your collections desk is ready.' : 'Log in with email, or continue with Xero.'}
+                </p>
+              </Rise>
+            </div>
+            <Rise delay={180}>
+              <HeroMock />
+            </Rise>
+          </section>
+
+          <section className="border-y bg-card/80 backdrop-blur-sm">
+            <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:grid-cols-3 sm:px-6">
+              {[
+                { k: 'Human first', v: 'every outbound action is approved' },
+                { k: 'Xero ready', v: 'connect your organisation when you log in' },
+                { k: 'UK SMEs', v: 'built for finance teams who live in the books' },
+              ].map((stat, i) => (
+                <Rise key={stat.k} delay={i * 90}>
+                  <p className="text-2xl font-semibold tracking-[-0.03em]">{stat.k}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">{stat.v}</p>
+                </Rise>
+              ))}
+            </div>
+          </section>
+
+          <section id="product" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-20 sm:px-6">
+            <Rise>
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">The problem</p>
+              <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.03em]">Chasing invoices is slow, awkward, and easy to get wrong.</h2>
+            </Rise>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {PROBLEMS.map((item, i) => {
+                const Icon = item.icon
+                return (
+                  <Rise key={item.title} delay={i * 80}>
+                    <article className="h-full rounded-2xl border bg-card/90 p-5 transition-transform duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_-28px_rgba(20,20,20,0.45)]">
+                      <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                      <h3 className="mt-4 text-[15px] font-semibold">{item.title}</h3>
+                      <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{item.body}</p>
+                    </article>
+                  </Rise>
+                )
+              })}
+            </div>
+          </section>
+
+          <section id="how" className="border-y bg-card/80 backdrop-blur-sm">
+            <div className="mx-auto max-w-6xl scroll-mt-24 px-4 py-20 sm:px-6">
+              <Rise>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">What we do</p>
+                <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.03em]">An investigations desk, not a chatbot.</h2>
+                <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+                  CashFlow OS is built for finance managers who already live in Xero. Connect the organisation, then let the agent do the tedious work: finding missing POs, spotting disputes, and drafting the email you would have written anyway.
+                </p>
+              </Rise>
+              <ol className="mt-12 grid gap-6 md:grid-cols-2">
+                {STEPS.map((step, i) => {
+                  const Icon = step.icon
+                  return (
+                    <li key={step.title} className="marketing-draw flex gap-4" style={{ animationDelay: `${i * 90}ms` }}>
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Step {i + 1}</p>
+                        <h3 className="mt-1 text-[15px] font-semibold">{step.title}</h3>
+                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">{step.body}</p>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            </div>
+          </section>
+
+          <section id="proof" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-20 sm:px-6">
+            <div className="grid items-start gap-10 lg:grid-cols-[1fr_0.9fr]">
+              <div>
+                <Rise>
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Designed to be trusted</p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">The agent is a junior. You stay the manager.</h2>
+                  <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
+                    Late-payment reasons are labelled “AI-identified likely reason”. Evidence sits in its own cards, separate from the conclusion. Nothing is sent until a person clicks Approve.
+                  </p>
+                </Rise>
+                <ul className="mt-8 space-y-3">
+                  {GUARANTEES.map((item, i) => (
+                    <li key={item} className={cn('flex items-start gap-2.5 text-[13.5px]', 'marketing-draw')} style={{ animationDelay: `${120 + i * 70}ms` }}>
+                      <Check className="mt-0.5 size-4 shrink-0 text-lime-strong" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Rise delay={120}>
+                <div className="rounded-2xl border bg-card p-6 shadow-[0_18px_40px_-28px_rgba(20,20,20,0.4)]">
+                  <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <ShieldCheck className="size-4" aria-hidden /> Demo story
+                  </p>
+                  <p className="mt-4 text-lg font-semibold tracking-[-0.02em]">INV-48291 · Northstar Ltd · £11,200</p>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">
+                    The invoice has no PO. Northstar’s contract requires one. Hannah emailed asking for it. The agent drafts a corrected invoice with PO-8821 and waits for you.
+                  </p>
+                  <Button className="mt-6" asChild>
+                    <Link to={isAuthenticated ? `${APP}/invoices/inv-48291` : LOGIN}>
+                      Open this invoice in the desk <ArrowRight />
+                    </Link>
+                  </Button>
+                </div>
+              </Rise>
+            </div>
+          </section>
+
+          <section className="border-t bg-primary text-primary-foreground">
+            <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-14 sm:flex-row sm:items-center sm:px-6">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em]">{isAuthenticated ? 'Your collections desk is ready.' : 'Log in and open the collections desk.'}</h2>
+                <p className="mt-2 max-w-md text-[14px] text-primary-foreground/70">
+                  {isAuthenticated
+                    ? 'Start on Overview, open INV-48291, and approve the next action.'
+                    : 'Use your work email, or continue with Xero to pull live contacts.'}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button size="lg" variant="lime" asChild>
+                  <Link to={isAuthenticated ? APP : LOGIN}>
+                    {isAuthenticated ? 'Open desk' : 'Log in'} <ArrowRight />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer className="border-t bg-background/80 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p>CashFlow OS</p>
+            <p>Not affiliated with Xero.</p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  )
+}
