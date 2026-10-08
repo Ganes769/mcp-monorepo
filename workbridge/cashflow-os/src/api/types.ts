@@ -17,6 +17,15 @@ export interface DbTest {
   result: number
 }
 
+export interface XeroLastSync {
+  status: string
+  mode?: string
+  contacts_stored?: number
+  invoices_stored?: number
+  finished_at: string | null
+  error: string | null
+}
+
 export interface XeroStatus {
   connected: boolean
   credentials_loaded: boolean
@@ -28,6 +37,23 @@ export interface XeroStatus {
   login_url: string
   login_url_api: string
   message: string
+  last_sync?: XeroLastSync | null
+}
+
+export interface XeroSyncResponse {
+  status?: string
+  mode?: string
+  contacts_stored?: number
+  invoices_stored?: number
+  finished_at?: string | null
+  error?: string | null
+  [key: string]: unknown
+}
+
+export interface XeroInvoicesResponse {
+  count: number
+  stored?: number
+  invoices: Record<string, unknown>[]
 }
 
 export interface XeroLoginUrl {

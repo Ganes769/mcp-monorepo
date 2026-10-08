@@ -85,7 +85,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               )}
             >
               <span className={cn('size-1.5 rounded-full', xeroLive ? 'bg-lime-strong' : 'bg-[#3b3905]')} aria-hidden />
-              {xeroLive ? 'Live' : 'Demo'}
+              {xeroLive ? 'Live' : 'Offline'}
             </span>
           </div>
           <div className="mt-2 flex items-center gap-2">
@@ -93,7 +93,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               xero
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold">{xeroLive ? 'Xero' : 'Xero — Demo'}</p>
+              <p className="text-[13px] font-semibold">Xero</p>
               <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
                 <span className={cn('size-1.5 rounded-full', xeroLive ? 'bg-lime' : 'bg-sun')} aria-hidden />
                 {xeroLive ? 'Connected' : 'Not connected'}

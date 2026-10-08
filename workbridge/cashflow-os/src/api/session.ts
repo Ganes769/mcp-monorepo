@@ -1,21 +1,21 @@
-const SESSION_KEY = 'cashflow.auth.session'
+const SESSION_KEY = "cashflow.auth.session";
 
 function storage(): Storage | null {
   try {
-    return window.localStorage
+    return window.localStorage;
   } catch {
-    return null
+    return null;
   }
 }
 
 export function readAuthSession(): boolean {
-  return storage()?.getItem(SESSION_KEY) === '1'
+  return storage()?.getItem(SESSION_KEY) === "1";
 }
 
 export function persistAuthSession(): void {
-  storage()?.setItem(SESSION_KEY, '1')
+  storage()?.setItem(SESSION_KEY, "1");
 }
 
 export function clearAuthSession(): void {
-  storage()?.removeItem(SESSION_KEY)
+  storage()?.removeItem(SESSION_KEY);
 }

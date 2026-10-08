@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/misc'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { XeroLiveBadge } from '@/components/xero/XeroLiveBadge'
 import { GlobalSearch } from './GlobalSearch'
 import { SidebarContent } from './Sidebar'
 
@@ -73,6 +74,7 @@ export function Topbar() {
         </Button>
         <GlobalSearch />
         <div className="ml-auto flex items-center gap-2">
+          <XeroLiveBadge compact />
           <NotificationsMenu />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

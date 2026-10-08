@@ -24,7 +24,7 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, subtitle, icon: Icon, trend, highlight, loading }: KpiCardProps) {
   return (
-    <Card className={cn('gap-3 p-4', highlight && 'border-peach/70 bg-peach-soft/40')}>
+    <Card className={cn('gap-3 p-4 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-28px_rgba(20,20,20,0.4)]', highlight && 'border-peach/70 bg-peach-soft/40')}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className={cn('flex size-7 items-center justify-center rounded-lg', highlight ? 'bg-peach-soft text-peach-strong' : 'bg-muted text-foreground/70')}>

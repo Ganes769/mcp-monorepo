@@ -75,6 +75,51 @@
   }
 }
 
+@keyframes ui-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-scan {
+  0% {
+    transform: translateY(-20%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(420%);
+    opacity: 0;
+  }
+}
+
+@keyframes ui-swap {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 @utility marketing-rise {
   animation: marketing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -104,6 +149,28 @@
   animation: marketing-glow 2.8s ease-in-out infinite;
 }
 
+@utility ui-rise {
+  animation: ui-rise 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility ui-rise-pending {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+@utility ui-scan {
+  animation: ui-scan 4.8s ease-in-out infinite;
+}
+
+@utility ui-swap {
+  animation: ui-swap 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility ui-shimmer {
+  background-size: 200% 100%;
+  animation: ui-shimmer 2.8s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marketing-rise,
   .marketing-bar,
@@ -111,8 +178,17 @@
   .marketing-float,
   .marketing-orb,
   .marketing-draw,
-  .marketing-glow {
+  .marketing-glow,
+  .ui-rise,
+  .ui-scan,
+  .ui-swap,
+  .ui-shimmer {
     animation: none !important;
+  }
+
+  .ui-rise-pending {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -223,6 +299,12 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   body {
     @apply bg-background text-foreground font-sans text-sm;

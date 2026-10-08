@@ -1,100 +1,225 @@
-import { Link, useNavigate } from 'react-router'
-import { Loader2, ScanSearch } from 'lucide-react'
-import type { Investigation } from '@/types'
-import { useInvestigations } from '@/hooks/queries'
-import { AGENT_STAGES, LATE_REASON } from '@/lib/labels'
-import { formatDateTime, formatDuration, formatMoney } from '@/lib/format'
-import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader } from '@/components/shared/PageHeader'
-import { AiStatusBadge } from '@/components/shared/badges'
-import { ConfidenceMeter } from '@/components/shared/ai'
-import { EmptyState, ErrorState, LoadingRows } from '@/components/shared/states'
+import { Link, useNavigate } from "react-router";
+import { ScanSearch } from "lucide-react";
 
-const stageLabel = (stage: Investigation['stage']) => AGENT_STAGES.find((s) => s.key === stage)?.label ?? stage
+import { useMemo } from "react";
 
-function Stat({ label, value, tone }: { label: string; value: number; tone: string }) {
+import { useSyncedInvoices } from "@/hooks/useXero";
+
+import {
+  activeInvoices,
+  invoiceAmount,
+  invoiceContactName,
+  invoiceDueDate,
+  invoiceXeroStatus,
+  invoiceStatusTone,
+} from "@/lib/xeroFields";
+
+import { formatDate, formatMoney } from "@/lib/format";
+
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { PageHeader } from "@/components/shared/PageHeader";
+
+import {
+  EmptyState,
+  ErrorState,
+  LoadingRows,
+} from "@/components/shared/states";
+
+function Stat({ label, value }: { label: string; value: number }) {
   return (
     <Card className="flex-row items-center gap-3 p-4">
-      <span className={`size-2.5 rounded-full ${tone}`} aria-hidden />
+      <span className="size-2.5 rounded-full bg-sun" aria-hidden />
+
       <span className="text-[13px] text-muted-foreground">{label}</span>
+
       <span className="ml-auto text-xl font-semibold tabular">{value}</span>
     </Card>
-  )
+  );
 }
 
 export function InvestigationsPage() {
-  const navigate = useNavigate()
-  const { data, isLoading, error, refetch } = useInvestigations()
-  const running = data?.filter((i) => i.state === 'running').length ?? 0
-  const awaiting = data?.filter((i) => i.state === 'completed' && i.stage === 'human_approval').length ?? 0
-  const monitoring = data?.filter((i) => i.stage === 'verify_payment').length ?? 0
+  const navigate = useNavigate();
+
+  // ============================================================
+  // REAL INVOICES FROM YOUR DATABASE / XERO SYNC
+  // ============================================================
+
+  const { data, isLoading, error, refetch } = useSyncedInvoices(true);
+  console.log(data);
+  const invoices = useMemo(() => activeInvoices(data?.invoices), [data]);
+
+  // ============================================================
+  // OVERDUE INVOICES
+  // ============================================================
+
+  const overdueInvoices = useMemo(() => {
+    const today = new Date();
+
+    return invoices.filter((invoice) => {
+      const dueDate = invoiceDueDate(invoice);
+
+      if (!dueDate) {
+        return false;
+      }
+
+      const status = invoiceXeroStatus(invoice)?.toUpperCase();
+
+      // Already paid -> not overdue
+      if (status === "PAID" || status === "VOIDED" || status === "DELETED") {
+        return false;
+      }
+
+      return new Date(dueDate) < today;
+    });
+  }, [invoices]);
+
+  // ============================================================
+  // STATS
+  // ============================================================
+
+  const inProgress = 0;
+
+  const waitingForHuman = 0;
+
+  const monitoring = overdueInvoices.length;
 
   return (
     <div className="space-y-5">
-      <PageHeader title="AI Investigations" description="What the agent checked on each invoice, what it thinks is going on, and how sure it is." />
+      <PageHeader
+        title="AI Investigations"
+        description="Overdue invoices from your Xero organisation that can be investigated by the AI agent."
+      />
+
+      {/* ========================================================
+          STATS
+      ======================================================== */}
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="In progress" value={running} tone="bg-sun" />
-        <Stat label="Waiting for a human" value={awaiting} tone="bg-peach" />
-        <Stat label="Monitoring payment" value={monitoring} tone="bg-lime" />
+        <Stat label="In progress" value={inProgress} />
+
+        <Stat label="Waiting for a human" value={waitingForHuman} />
+
+        <Stat label="Overdue to investigate" value={monitoring} />
       </div>
+
+      {/* ========================================================
+          TABLE
+      ======================================================== */}
 
       <Card className="overflow-hidden">
         {error ? (
           <ErrorState error={error} onRetry={() => refetch()} />
         ) : isLoading ? (
           <LoadingRows rows={8} />
-        ) : !data?.length ? (
-          <EmptyState icon={ScanSearch} title="No investigations yet" description="Open an overdue invoice and start an investigation." />
+        ) : overdueInvoices.length === 0 ? (
+          <EmptyState
+            icon={ScanSearch}
+            title="No overdue invoices"
+            description="There are currently no overdue invoices that need an investigation."
+          />
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Invoice</TableHead>
+
                 <TableHead>Customer</TableHead>
+
                 <TableHead className="text-right">Outstanding</TableHead>
+
                 <TableHead>Stage</TableHead>
+
                 <TableHead>AI-identified likely reason</TableHead>
+
                 <TableHead>Confidence</TableHead>
-                <TableHead>Invoice AI status</TableHead>
-                <TableHead>Started</TableHead>
-                <TableHead className="text-right">Elapsed</TableHead>
+
+                <TableHead>Invoice status</TableHead>
+
+                <TableHead>Due date</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {data.map((row) => (
-                <TableRow key={row.invoiceId} className="cursor-pointer" onClick={() => navigate(`/app/invoices/${row.invoiceId}`)}>
-                  <TableCell className="font-semibold">
-                    <Link to={`/app/invoices/${row.invoiceId}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
-                      {row.invoice.invoiceNumber}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{row.invoice.customerName}</TableCell>
-                  <TableCell className="text-right tabular">{formatMoney(row.invoice.amountDue)}</TableCell>
-                  <TableCell>
-                    {row.state === 'running' ? (
-                      <Badge variant="sun">
-                        <Loader2 className="animate-spin" aria-hidden /> {row.live ? row.currentStep : 'Queued to resume'}
+              {overdueInvoices.map((invoice) => {
+                const status = invoiceXeroStatus(invoice) || "UNKNOWN";
+
+                const dueDate = invoiceDueDate(invoice);
+
+                return (
+                  <TableRow
+                    key={invoice.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/app/invoices/${invoice.id}`)}
+                  >
+                    {/* INVOICE */}
+
+                    <TableCell className="font-semibold">
+                      <Link
+                        to={`/app/invoices/${invoice.id}`}
+                        className="hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {invoice.invoice_number || invoice.id}
+                      </Link>
+                    </TableCell>
+
+                    {/* CUSTOMER */}
+
+                    <TableCell>{invoiceContactName(invoice)}</TableCell>
+
+                    {/* AMOUNT */}
+
+                    <TableCell className="text-right font-medium tabular">
+                      {formatMoney(invoiceAmount(invoice), {
+                        precise: true,
+                      })}
+                    </TableCell>
+
+                    {/* STAGE */}
+
+                    <TableCell>
+                      <Badge variant="outline">Not started</Badge>
+                    </TableCell>
+
+                    {/* AI REASON */}
+
+                    <TableCell className="text-muted-foreground">—</TableCell>
+
+                    {/* CONFIDENCE */}
+
+                    <TableCell className="text-muted-foreground">—</TableCell>
+
+                    {/* INVOICE STATUS */}
+
+                    <TableCell>
+                      <Badge variant={invoiceStatusTone(status)}>
+                        {status}
                       </Badge>
-                    ) : (
-                      <Badge variant="outline">{stageLabel(row.stage)}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{row.state === 'completed' ? LATE_REASON[row.likelyReason] : '—'}</TableCell>
-                  <TableCell>{row.confidence !== null ? <ConfidenceMeter value={row.confidence} compact /> : <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell>
-                    <AiStatusBadge status={row.invoice.aiStatus} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDateTime(row.startedAt)}</TableCell>
-                  <TableCell className="text-right tabular">{formatDuration(row.elapsedSeconds)}</TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+
+                    {/* DUE DATE */}
+
+                    <TableCell className="text-muted-foreground">
+                      {dueDate ? formatDate(dueDate) : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
       </Card>
     </div>
-  )
+  );
 }

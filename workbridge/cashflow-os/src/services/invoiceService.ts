@@ -51,11 +51,11 @@ export async function liveInvoiceRows(): Promise<InvoiceRow[]> {
 
 export async function liveXeroContacts() {
   try {
-    return (await xeroApi.contactsAll()).contacts
+    const synced = await xeroApi.syncedContacts()
+    return (synced.contacts ?? []).map(syncedContactToXero).filter((c): c is NonNullable<typeof c> => c !== null)
   } catch (error) {
     if (error instanceof ApiError && (error.status === 401 || error.status === 502)) {
-      const synced = await xeroApi.syncedContacts()
-      return (synced.contacts ?? []).map(syncedContactToXero).filter((c): c is NonNullable<typeof c> => c !== null)
+      return []
     }
     throw error
   }

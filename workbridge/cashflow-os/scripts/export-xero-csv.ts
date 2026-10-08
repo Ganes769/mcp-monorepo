@@ -18,6 +18,8 @@ import { invoices } from '@/data/invoices'
 const OUT_DIR = join(import.meta.dirname, '..', 'exports', 'xero')
 const SALES_ACCOUNT_CODE = '200'
 const TAX_TYPE = '20% (VAT on Income)'
+/** CSV labels from Xero's import guide. The API enums (DAYSAFTERBILLDATE and similar) are rejected. */
+const SALES_DUE_TERM = 'Days After'
 
 /** Exact header from Xero's Contacts import template (UK). Extra Person2–5 columns must be present. */
 const CONTACT_HEADERS = [
@@ -88,13 +90,13 @@ const contactRows = customers.map((c) => {
     SAPostalCode: a.postcode,
     SACountry: a.country,
     PhoneNumber: c.phone,
-    TaxNumber: c.vatNumber,
+    TaxNumber: c.vatNumber.replace(/\s+/g, ''),
     AccountsReceivableTaxCodeName: TAX_TYPE,
     Website: c.website,
     LegalName: c.legalName,
     CompanyNumber: c.companyNumber,
     DueDateSalesDay: c.paymentTermsDays,
-    DueDateSalesTerm: 'DAYSAFTERBILLDATE',
+    DueDateSalesTerm: SALES_DUE_TERM,
     SalesAccount: SALES_ACCOUNT_CODE,
     DefaultTaxSales: TAX_TYPE,
     Person1FirstName: first,

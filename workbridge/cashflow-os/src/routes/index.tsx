@@ -19,6 +19,7 @@ const FollowUpsPage = lazy(() => import('@/pages/FollowUpsPage').then((m) => ({ 
 const AgentActivityPage = lazy(() => import('@/pages/AgentActivityPage').then((m) => ({ default: m.AgentActivityPage })))
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const XeroPage = lazy(() => import('@/pages/XeroPage').then((m) => ({ default: m.XeroPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
 
 export const router = createBrowserRouter([
@@ -47,8 +48,10 @@ export const router = createBrowserRouter([
           { path: 'invoices/:invoiceId', element: <InvoiceDetailPage /> },
           { path: 'investigations', element: <InvestigationsPage /> },
           { path: 'approvals', element: <ApprovalsPage /> },
+          { path: 'contacts', element: <CustomersPage /> },
           { path: 'customers', element: <CustomersPage /> },
           { path: 'customers/:customerId', element: <CustomerDetailPage /> },
+          { path: 'xero', element: <XeroPage /> },
           { path: 'follow-ups', element: <FollowUpsPage /> },
           { path: 'agent-activity', element: <AgentActivityPage /> },
           { path: 'analytics', element: <AnalyticsPage /> },

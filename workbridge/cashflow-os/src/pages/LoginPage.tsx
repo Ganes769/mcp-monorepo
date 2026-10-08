@@ -154,11 +154,8 @@ export function LoginPage() {
 
             <Button size="lg" variant="outline" className="w-full" type="button" onClick={() => void onXero()} disabled={busy}>
               {connecting ? <Loader2 className="animate-spin" aria-hidden /> : <XeroMark />}
-              {connecting ? 'Waiting for Xero…' : 'Sign in with Xero'}
+              {connecting ? 'Redirecting to Xero…' : 'Sign in with Xero'}
             </Button>
-            {connecting ? (
-              <p className="mt-3 text-center text-xs text-muted-foreground">Finish in the Xero window, then close it to return here.</p>
-            ) : null}
 
             <p className="mt-8 text-center text-xs text-muted-foreground">
               <Link to="/" className="hover:text-foreground hover:underline">
